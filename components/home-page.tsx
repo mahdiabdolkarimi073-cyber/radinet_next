@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import type { HomeData, HomeService, HomeStat } from '@/lib/home-data';
-import { Activity, ArrowLeft, Building2, ChevronDown, Headphones, Instagram, Linkedin, Menu, MessageCircle, Network, Phone, ShoppingCart, Stethoscope, UserCheck, Users, X } from 'lucide-react';
+import { SiteHeader } from '@/components/site-header';
+import { SiteFooter } from '@/components/site-footer';
+import { Activity, ArrowLeft, Building2, CheckCircle, Headphones, Network, ShieldCheck, ShoppingCart, Stethoscope, UserCheck, Users, Zap } from 'lucide-react';
 
 type HomePageProps = { data: HomeData };
 
@@ -11,7 +13,7 @@ type IconProps = { size?: number; strokeWidth?: number };
 const serviceIcons: Record<string, (props: IconProps) => JSX.Element> = {
   store: (props) => <ShoppingCart {...props} />,
   teleradiology: (props) => <Network {...props} />,
-  consultation: (props) => <MessageCircle {...props} />,
+  consultation: (props) => <Headphones {...props} />,
   services: (props) => <Stethoscope {...props} />,
 };
 
@@ -22,20 +24,43 @@ const statIcons: Record<string, (props: IconProps) => JSX.Element> = {
   'user-check': (props) => <UserCheck {...props} />,
 };
 
-const navItems = ['خانه', 'درباره ما', 'خدمات', 'فروشگاه', 'تله‌رادیولوژی', 'مشاوره', 'مقالات', 'پشتیبانی', 'تماس با ما'];
+const featureIcons = [
+  (props: IconProps) => <Zap {...props} />,
+  (props: IconProps) => <ShieldCheck {...props} />,
+  (props: IconProps) => <Headphones {...props} />,
+];
+
+const features = [
+  { title: 'سرعت و دقت بالا', text: 'تفسیر تصاویر پزشکی در کمترین زمان ممکن با دقت تخصصی رادیولوژیست‌های مجرب' },
+  { title: 'امنیت اطلاعات', text: 'حفاظت کامل از داده‌های بیماران مطابق با استانداردهای روز信息安全 و حریم خصوصی' },
+  { title: 'پشتیبانی ۲۴ ساعته', text: 'تیم پشتیبانی متخصص در تمام ساعات شبانه‌روز آماده پاسخگویی به شما هستند' },
+];
+
+const testimonials = [
+  { name: 'دکتر مریم احمدی', role: 'رادیولوژیست', text: 'استفاده از پلتفرم رادینت سرعت تفسیر گزارش‌ها را به شکل چشمگیری افزایش داده است. کیفیت خدمات واقعاً عالی است.' },
+  { name: 'دکتر علی رضایی', role: 'مدیر مرکز تصویربرداری', text: 'از زمانی که با رادینت همکاری می‌کنیم، فرآیند تفسیر تصاویر بسیار سریع‌تر و منظم‌تر شده است. کاملاً راضی هستیم.' },
+  { name: 'مهندس سارا کریمی', role: 'مسئول فنی بیمارستان', text: 'سیستم تله‌رادیولوژی رادینت بسیار پایدار و کاربرپسند است. پشتیبانی فوق‌العاده‌ای دارند و همیشه پاسخگو هستند.' },
+];
+
+const faqs = [
+  { q: 'تله‌رادیولوژی چیست و چه مزایایی دارد؟', a: 'تله‌رادیولوژی به انتقال تصاویر پزشکی از طریق اینترنت برای تفسیر توسط متخصصان رادیولوژی در دور دست گفته می‌شود. مزیت اصلی آن سرعت بیشتر در تشخیص و دسترسی به متخصصان است.' },
+  { q: 'چگونه می‌توانم از خدمات رادینت استفاده کنم؟', a: 'کافی است در سامانه ثبت‌نام کنید و درخواست خود را ثبت نمایید. کارشناسان ما در اسرع وقت با شما تماس می‌گیرند.' },
+  { q: 'آیا اطلاعات بیماران من امن است؟', a: 'بله، تمامی داده‌ها با رمزنگاری منتقل و ذخیره می‌شوند و مطابق با استانداردهای امنیتی روز از اطلاعات محافظت می‌شود.' },
+  { q: 'زمان پاسخگویی به درخواست‌ها چقدر است؟', a: 'درخواست‌های عادی معمولاً در کمتر از ۲۴ ساعت پاسخ داده می‌شوند و درخواست‌های اورژانسی به صورت فوری پردازش می‌گردند.' },
+];
 
 function ServiceCard({ service }: { service: HomeService }) {
   const Icon = serviceIcons[service.icon_key] ?? serviceIcons.services;
   return (
     <article className={`service-card service-card--${service.color_theme}`}>
       <div className="service-card__top">
-        <div className="service-card__icon"><Icon size={24} strokeWidth={1.8} /></div>
+        <div className="service-card__icon"><Icon size={28} strokeWidth={1.8} /></div>
         <div>
           <h3>{service.name}</h3>
           <p>{service.description}</p>
         </div>
       </div>
-      <button className="text-action">{service.cta_label}<ArrowLeft size={14} /></button>
+      <button className="text-action">{service.cta_label}<ArrowLeft size={16} /></button>
     </article>
   );
 }
@@ -44,7 +69,7 @@ function StatCard({ stat }: { stat: HomeStat }) {
   const Icon = statIcons[stat.icon_key] ?? statIcons.activity;
   return (
     <div className="stat-card">
-      <div className="stat-card__icon"><Icon size={20} strokeWidth={1.8} /></div>
+      <div className="stat-card__icon"><Icon size={24} strokeWidth={1.8} /></div>
       <div>
         <span>{stat.label}</span>
         <strong>{stat.value}</strong>
@@ -54,31 +79,9 @@ function StatCard({ stat }: { stat: HomeStat }) {
 }
 
 export default function HomePage({ data }: HomePageProps) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
-
   return (
     <main>
-      <header className="site-header">
-        <div className="container header-inner">
-          <a className="brand" href="#home" aria-label="رادینت">
-            <span className="brand-mark">◈</span>
-            <span><b>رادینت</b><small>RADINAT</small></span>
-          </a>
-          <button className="mobile-menu-button" onClick={() => setMenuOpen((open) => !open)} aria-label="باز کردن منو">
-            {menuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-          <nav className={`main-nav ${menuOpen ? 'is-open' : ''}`}>
-            {navItems.map((item, index) => <a key={item} className={index === 0 ? 'is-active' : ''} href={`#${index === 0 ? 'home' : 'services'}`} onClick={() => setMenuOpen(false)}>{item}</a>)}
-          </nav>
-          <div className="header-actions">
-            <button className="language-button"><span>فارسی</span><ChevronDown size={13} /></button>
-            <button className="cart-button" onClick={() => setCartCount((count) => count + 1)} aria-label="سبد خرید"><ShoppingCart size={18} />{cartCount > 0 && <em>{cartCount}</em>}</button>
-            <button className="button button--outline">ورود</button>
-            <button className="button button--primary">ثبت‌نام</button>
-          </div>
-        </div>
-      </header>
+      <SiteHeader activePath="/" />
 
       <section className="hero" id="home">
         <div className="container hero-inner">
@@ -87,34 +90,122 @@ export default function HomePage({ data }: HomePageProps) {
             <h1>{data.slide.title}</h1>
             <h2>{data.slide.subtitle}</h2>
             <p>{data.slide.description}</p>
-            <div className="hero-actions"><button className="button button--primary button--wide">{data.slide.primary_cta}</button><button className="button button--outline button--wide">{data.slide.secondary_cta}</button></div>
+            <div className="hero-actions">
+              <button className="button button--primary button--wide">{data.slide.primary_cta}</button>
+              <button className="button button--outline button--wide">{data.slide.secondary_cta}</button>
+            </div>
           </div>
           <div className="hero-visual"><img src={data.slide.image_url} alt="محیط تصویربرداری پزشکی رادینت" /></div>
         </div>
       </section>
 
-      <div className="container services-grid" id="services">{data.services.map((service) => <ServiceCard key={service.name} service={service} />)}</div>
+      <div className="container services-grid" id="services">
+        {data.services.map((service) => <ServiceCard key={service.name} service={service} />)}
+      </div>
 
       <section className="container dashboard-grid">
         <div className="panel news-panel">
-          <div className="section-heading"><div><span className="eyebrow">دانستنی‌های رادینت</span><h2>آخرین مقالات و اخبار</h2></div><a href="#news">مشاهده همه <ArrowLeft size={14} /></a></div>
-          <div className="news-list" id="news">{data.news.map((item) => <article className="news-item" key={item.title}><img src={item.image_url} alt="" /><div><h3>{item.title}</h3><time>{item.date_label}</time></div><ArrowLeft size={16} /></article>)}</div>
+          <div className="section-heading">
+            <div><span className="eyebrow">دانستنی‌های رادینت</span><h2>آخرین مقالات و اخبار</h2></div>
+            <a href="#news">مشاهده همه <ArrowLeft size={16} /></a>
+          </div>
+          <div className="news-list" id="news">
+            {data.news.map((item) => (
+              <article className="news-item" key={item.title}>
+                <img src={item.image_url} alt="" />
+                <div><h3>{item.title}</h3><time>{item.date_label}</time></div>
+                <ArrowLeft size={18} />
+              </article>
+            ))}
+          </div>
         </div>
         <div className="panel stats-panel">
-          <div className="section-heading"><div><span className="eyebrow">فعالیت سامانه</span><h2>آمار و ارقام رادینت</h2></div></div>
-          <div className="stats-grid">{data.stats.map((stat) => <StatCard key={stat.label} stat={stat} />)}</div>
+          <div className="section-heading">
+            <div><span className="eyebrow">فعالیت سامانه</span><h2>آمار و ارقام رادینت</h2></div>
+          </div>
+          <div className="stats-grid">
+            {data.stats.map((stat) => <StatCard key={stat.label} stat={stat} />)}
+          </div>
         </div>
       </section>
 
-      <footer className="site-footer">
-        <div className="container footer-grid">
-          <div className="footer-about"><a className="brand brand--footer" href="#home"><span className="brand-mark">◈</span><span><b>رادینت</b><small>RADINAT</small></span></a><p>{data.footer.description}</p><div className="socials"><a href="#instagram" aria-label="اینستاگرام"><Instagram size={16} /></a><a href="#linkedin" aria-label="لینکدین"><Linkedin size={16} /></a></div></div>
-          <div className="footer-column"><h3>خدمات ما</h3><a href="#services">فروشگاه</a><a href="#services">تله‌رادیولوژی</a><a href="#services">مشاوره</a><a href="#services">سایر خدمات</a></div>
-          <div className="footer-column"><h3>دسترسی سریع</h3><a href="#home">خانه</a><a href="#about">درباره ما</a><a href="#news">مقالات</a><a href="#support">پشتیبانی</a></div>
-          <div className="footer-column footer-contact"><h3>راه‌های ارتباطی</h3><a href={`tel:${data.footer.phone}`}><Phone size={15} />{data.footer.phone}</a><a href={`mailto:${data.footer.email}`}><Headphones size={15} />{data.footer.email}</a><span><Building2 size={15} />{data.footer.address}</span></div>
+      {/* Features Section */}
+      <section className="features-section">
+        <div className="container">
+          <div className="section-heading">
+            <div><span className="eyebrow">چرا رادینت؟</span><h2 style={{ fontSize: '28px' }}>مزایای استفاده از سامانه رادینت</h2></div>
+          </div>
+          <div className="features-grid">
+            {features.map((f, i) => {
+              const Icon = featureIcons[i] ?? featureIcons[0];
+              return (
+                <div className="feature-card" key={f.title}>
+                  <div className="feature-card__icon"><Icon size={32} strokeWidth={1.8} /></div>
+                  <h3>{f.title}</h3>
+                  <p>{f.text}</p>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div className="container footer-bottom"><span>© تمامی حقوق برای رادینت محفوظ است.</span><span>طراحی و توسعه با رویکرد سلامت دیجیتال</span></div>
-      </footer>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="testimonials-section">
+        <div className="container">
+          <div className="section-heading">
+            <div><span className="eyebrow">نظر مشتریان ما</span><h2 style={{ fontSize: '28px' }}>تجربه کاربران رادینت</h2></div>
+          </div>
+          <div className="testimonials-grid">
+            {testimonials.map((t) => (
+              <div className="testimonial-card" key={t.name}>
+                <div className="testimonial-card__stars">★★★★★</div>
+                <p>{t.text}</p>
+                <div className="testimonial-card__author">
+                  <div className="testimonial-card__avatar">{t.name.charAt(0)}</div>
+                  <div>
+                    <strong>{t.name}</strong>
+                    <span>{t.role}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="cta-section">
+        <div className="container">
+          <div className="cta-banner">
+            <h2>آماده شروع همکاری با رادینت هستید؟</h2>
+            <p>همین حالا ثبت‌نام کنید و از خدمات تخصصی تصویربرداری پزشکی بهره‌مند شوید</p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button className="button button--primary">ثبت‌نام در سامانه</button>
+              <button className="button button--outline">مشاوره رایگان</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="faq-section">
+        <div className="container">
+          <div className="section-heading">
+            <div><span className="eyebrow">سوالات متداول</span><h2 style={{ fontSize: '28px' }}>پرسش‌های رایج کاربران</h2></div>
+          </div>
+          <div className="faq-list">
+            {faqs.map((f) => (
+              <details className="faq-item" key={f.q}>
+                <summary>{f.q}</summary>
+                <div className="faq-item__answer">{f.a}</div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <SiteFooter footer={data.footer} />
     </main>
   );
 }

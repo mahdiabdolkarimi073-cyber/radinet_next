@@ -1,1 +1,65 @@
-.about-screen{direction:rtl;color:#1e293b;font-family:'Vazirmatn',Tahoma,sans-serif}.about-header{height:64px;display:flex;align-items:center;gap:24px;padding:0 44px;border-bottom:1px solid #e8edf3;background:#fff}.about-header>img{width:58px;height:48px;object-fit:contain}.about-header nav{display:flex;gap:20px;justify-content:center;flex:1}.about-header nav a,.about-header button{font-size:11px;color:#1e293b;background:none;border:0;white-space:nowrap}.about-header>div{display:flex;gap:8px;align-items:center}.about-header .outline{border:1px solid #1557c8;border-radius:5px;padding:6px 12px;color:#1557c8}.primary{background:#1557c8!important;color:white!important;border:0;border-radius:5px;padding:7px 14px}.about-hero{height:180px;display:grid;place-items:center;align-content:center;color:white;text-align:center;background:linear-gradient(#022448c7,#022448c7),url('/assets/images/hero-radinat-radiology.png.png') center/cover}.about-hero span{font-size:11px}.about-hero h1{font-size:32px;margin:12px 0 6px}.about-hero p{font-size:12px;margin:0}.about-container{width:min(1180px,calc(100% - 88px));margin:auto;padding:34px 0}.about-intro{display:grid;grid-template-columns:300px 1fr;gap:44px;align-items:center}.about-intro>img{width:300px;height:255px;object-fit:cover;border-radius:9px}.about-intro h2,.about-cards h2,.about-bottom h2{font-size:20px;color:#092d57;margin:0 0 12px}.about-intro>div>p{font-size:12px;line-height:2;color:#475569}.about-values{border-top:1px solid #e5eaf0;margin-top:18px;padding-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.about-values svg{color:#3569b8}.about-values h3{font-size:12px;color:#173a64;margin:7px 0}.about-values p{font-size:10px;line-height:1.8;color:#64748b;margin:0}.about-cards,.about-bottom{display:grid;grid-template-columns:1fr 1.45fr;gap:22px;margin-top:28px}.about-cards>article,.about-bottom>article{border:1px solid #e6ebf1;border-radius:8px;padding:17px;position:relative}.about-cards h2,.about-bottom h2{font-size:14px}.about-cards>a{position:absolute;left:17px;top:18px;color:#1557c8;font-size:10px;display:flex;gap:4px}.team-images,.office-images{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:17px}.team-images img,.office-images img{width:100%;height:111px;object-fit:cover;border-radius:7px}.about-bottom{grid-template-columns:1.45fr 1fr;margin-top:20px}.certs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.certs div{text-align:center}.certs img{width:100%;height:70px;object-fit:contain}.certs span{font-size:9px;color:#64748b}.about-bottom form{background:#f4f8ff;border:1px solid #dce8f8;border-radius:8px;padding:17px;display:flex;gap:15px;color:#2865c5}.about-bottom form>div{flex:1}.about-bottom form h2{margin:2px 0 6px}.about-bottom form p{font-size:10px;color:#64748b}.about-bottom input{display:block;width:100%;height:29px;margin:7px 0;border:1px solid #d6e3f4;border-radius:5px;padding:0 8px;font-size:10px}.about-bottom form button{font-size:10px;margin-top:3px}@media(max-width:850px){.about-header{padding:0 16px}.about-header nav{display:none}.about-container{width:calc(100% - 32px)}.about-intro,.about-cards,.about-bottom{grid-template-columns:1fr}.about-intro>img{width:100%}}@media(max-width:480px){.about-header>div button:not(.primary):not(.outline){display:none}.about-values{gap:10px}.team-images img,.office-images img{height:85px}.certs{grid-template-columns:repeat(2,1fr)}}
+.about-hero{
+  min-height:280px;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  color:#fff;
+  text-align:center;
+  background:linear-gradient(rgba(6,45,85,.82),rgba(6,45,85,.82)),url('/assets/images/hero-radinat-radiology.png.png') center/cover;
+  padding:48px 24px;
+}
+.about-hero span{font-size:16px;color:#bcd4ee}
+.about-hero h1{font-size:42px;margin:10px 0;color:#fff;font-weight:800}
+.about-hero p{font-size:18px;margin:0;color:#dbe8f6}
+
+.about-container{
+  width:min(1440px,calc(100% - 48px));
+  margin:auto;
+  padding:56px 0;
+}
+.about-intro{display:grid;grid-template-columns:420px 1fr;gap:56px;align-items:center}
+.about-intro>img{width:420px;height:340px;object-fit:cover;border-radius:14px}
+.about-intro h2,.about-cards h2,.about-bottom h2{font-size:26px;color:#12365d;margin:0 0 16px;font-weight:700}
+.about-intro>div>p{font-size:18px;line-height:2;color:#475569}
+.about-values{border-top:1px solid #e5eaf0;margin-top:24px;padding-top:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.about-values svg{color:#1557c8}
+.about-values h3{font-size:18px;color:#12365d;margin:10px 0}
+.about-values p{font-size:15px;line-height:1.8;color:#64748b;margin:0}
+
+.about-cards,.about-bottom{display:grid;grid-template-columns:1fr 1.45fr;gap:28px;margin-top:40px}
+.about-cards>article,.about-bottom>article{border:1px solid #e5eaf0;border-radius:12px;padding:24px;position:relative}
+.about-cards h2,.about-bottom h2{font-size:22px}
+.about-cards>a{position:absolute;left:24px;top:24px;color:#1557c8;font-size:15px;display:flex;gap:6px}
+.team-images,.office-images{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+.team-images img,.office-images img{width:100%;height:160px;object-fit:cover;border-radius:10px}
+
+.about-bottom{grid-template-columns:1.45fr 1fr;margin-top:32px}
+.certs{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.certs div{text-align:center}
+.certs img{width:100%;height:100px;object-fit:contain}
+.certs span{font-size:15px;color:#64748b}
+
+.about-bottom form{background:#f4f8ff;border:1px solid #dce8f8;border-radius:12px;padding:24px;display:flex;gap:18px;color:#1557c8}
+.about-bottom form>div{flex:1}
+.about-bottom form h2{margin:4px 0 8px}
+.about-bottom form p{font-size:16px;color:#64748b}
+.about-bottom input{display:block;width:100%;height:48px;margin:10px 0;border:1px solid #d6e3f4;border-radius:8px;padding:0 14px;font-size:16px}
+.about-bottom form button{font-size:16px;margin-top:6px;height:48px;padding:0 24px;border:0;border-radius:8px;background:#1557c8;color:#fff;font-weight:600;cursor:pointer}
+
+@media(max-width:1024px){
+  .about-intro{grid-template-columns:1fr;gap:32px}
+  .about-intro>img{width:100%;height:280px}
+}
+@media(max-width:850px){
+  .about-container{width:calc(100% - 32px)}
+  .about-cards,.about-bottom{grid-template-columns:1fr}
+  .about-hero h1{font-size:32px}
+  .about-hero p{font-size:16px}
+}
+@media(max-width:480px){
+  .about-values{gap:14px}
+  .team-images img,.office-images img{height:120px}
+  .certs{grid-template-columns:repeat(2,1fr)}
+  .about-intro h2,.about-cards h2,.about-bottom h2{font-size:22px}
+  .about-intro>div>p{font-size:16px}
+}
