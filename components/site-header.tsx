@@ -7,11 +7,11 @@ const navItems = [
   { label: 'خانه', href: '/' },
   { label: 'درباره ما', href: '/about' },
   { label: 'خدمات', href: '/#services' },
-  { label: 'فروشگاه', href: '/#services' },
+  { label: 'فروشگاه', href: '/shop' },
   { label: 'تله‌رادیولوژی', href: '/#services' },
   { label: 'مشاوره', href: '/#services' },
   { label: 'مقالات', href: '/#news' },
-  { label: 'پشتیبانی', href: '/contact' },
+  { label: 'پشتیبانی', href: '/support' },
   { label: 'تماس با ما', href: '/contact' },
   { label: 'قوانین', href: '/legal/terms' },
 ];
