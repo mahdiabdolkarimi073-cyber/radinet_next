@@ -13,6 +13,7 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react';
+import { addToCart } from '@/lib/cart';
 
 const api = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000';
 
@@ -301,6 +302,7 @@ export function SearchPage() {
                 const inStock = p.stock > 0;
                 return (
                   <article className="search-card" key={p.id}>
+                    <a href={`/shop/product/${p.slug}`} className="search-card__link">
                     <div className="search-card__image">
                       <img src={p.imageUrl || '/assets/images/logo-radinat.svg.png'} alt={p.name} loading="lazy" />
                     </div>
@@ -316,7 +318,10 @@ export function SearchPage() {
                         {inStock ? 'موجود' : 'ناموجود'}
                       </span>
                     </div>
-                    <button className="search-card__cart" aria-label="افزودن به سبد" disabled={!inStock}>
+                    </a>
+                    <button className="search-card__cart" aria-label="افزودن به سبد" disabled={!inStock}
+                      onClick={(e) => { e.preventDefault(); addToCart({ productId: p.id, slug: p.slug, name: p.name, brand: p.brand, imageUrl: p.imageUrl, price: Number(p.price), quantity: 1, stock: p.stock }); }}
+                    >
                       <ShoppingCart size={18} />
                     </button>
                   </article>

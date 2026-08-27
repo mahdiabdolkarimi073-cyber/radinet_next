@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronDown, Menu, ShoppingCart, X } from 'lucide-react';
+import { cartCount, readCart } from '@/lib/cart';
 
 const navItems = [
   { label: 'خانه', href: '/' },
@@ -23,7 +24,14 @@ type SiteHeaderProps = {
 
 export function SiteHeader({ activePath }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const update = () => setCount(cartCount(readCart()));
+    update();
+    window.addEventListener('cart-updated', update);
+    return () => window.removeEventListener('cart-updated', update);
+  }, []);
 
   return (
     <header className="site-header">
@@ -49,9 +57,9 @@ export function SiteHeader({ activePath }: SiteHeaderProps) {
         </nav>
         <div className="header-actions">
           <button className="language-button"><span>فارسی</span><ChevronDown size={13} /></button>
-          <button className="cart-button" onClick={() => setCartCount((count) => count + 1)} aria-label="سبد خرید">
-            <ShoppingCart size={18} />{cartCount > 0 && <em>{cartCount}</em>}
-          </button>
+          <a className="cart-button" href="/shop/cart" aria-label="سبد خرید">
+            <ShoppingCart size={18} />{count > 0 && <em>{count.toLocaleString('fa-IR')}</em>}
+          </a>
           <button className="button button--outline">ورود</button>
           <button className="button button--primary">ثبت‌نام</button>
         </div>
