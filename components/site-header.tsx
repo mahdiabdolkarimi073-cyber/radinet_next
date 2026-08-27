@@ -8,6 +8,7 @@ const navItems = [
   { label: 'درباره ما', href: '/about' },
   { label: 'خدمات', href: '/#services' },
   { label: 'فروشگاه', href: '/shop' },
+  { label: 'جستجوی محصولات', href: '/shop/search' },
   { label: 'تله‌رادیولوژی', href: '/#services' },
   { label: 'مشاوره', href: '/#services' },
   { label: 'مقالات', href: '/#news' },
