@@ -86,7 +86,7 @@ export function CartPage() {
             <div className="cart-summary__lines"><div><span>جمع جزء</span><strong>{money(subtotal)}</strong></div><div className="is-discount"><span>سود شما از خرید</span><strong>- {money(discountAmount)}</strong></div><div><span>مالیات ({Number(config.taxRate).toLocaleString('fa-IR')}٪)</span><strong>{money(tax)}</strong></div><div><span>هزینه ارسال</span><strong>{shipping === 0 ? 'رایگان' : money(shipping)}</strong></div></div>
             <div className="cart-coupon"><label htmlFor="discount-code">کد تخفیف</label><div><input id="discount-code" value={discountCode} onChange={(event) => setDiscountCode(event.target.value)} placeholder="RADINTO" /><button onClick={applyDiscount} disabled={discountLoading}>{discountLoading ? '...' : 'اعمال'}</button></div>{discountError && <small>{discountError}</small>}{discount && <small className="is-success">کد تخفیف اعمال شد.</small>}</div>
             <div className="cart-summary__total"><span>مبلغ قابل پرداخت</span><strong>{money(total)}</strong></div>
-            <button className="cart-checkout">ادامه ثبت سفارش <Plus size={18} /></button>
+            <a className="cart-checkout" href="/shop/checkout">ادامه ثبت سفارش <Plus size={18} /></a>
           </aside>
         </div>
         <div className="cart-free-shipping"><Send size={18} /> ارسال رایگان برای سفارش‌های بالای {config.freeShippingThreshold > 0 ? money(config.freeShippingThreshold) : 'سقف تعیین‌شده توسط مدیریت'}</div>

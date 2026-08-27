@@ -14,6 +14,7 @@ const navItems = [
   { label: 'مشاوره', href: '/#services' },
   { label: 'مقالات', href: '/#news' },
   { label: 'پشتیبانی', href: '/support' },
+  { label: 'پیگیری سفارش', href: '/shop/tracking' },
   { label: 'تماس با ما', href: '/contact' },
   { label: 'قوانین', href: '/legal/terms' },
 ];

@@ -2,7 +2,7 @@ import { ProductDetailPage } from '@/components/product-detail-page';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { fallbackData } from '@/lib/home-data';
-import '../product-detail.css';
+import '../../product-detail.css';
 
 export const metadata = {
   title: 'جزئیات محصول | فروشگاه رادینت',
