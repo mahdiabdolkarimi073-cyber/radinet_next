@@ -66,7 +66,8 @@ export function SiteHeader({ activePath }: SiteHeaderProps) {
           </a>
           {loading ? null : user ? (
             <>
-              <span className="header-user"><User size={16} /> {user.email?.split('@')[0]}</span>
+              <span className="header-user"><User size={16} /> {user.fullName || user.email?.split('@')[0]}</span>
+              <a className="button button--outline" href="/dashboard">داشبورد</a>
               <button className="button button--outline" onClick={() => void signOut()}><LogOut size={16} /> خروج</button>
             </>
           ) : (

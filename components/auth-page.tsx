@@ -6,12 +6,13 @@ import { ArrowLeft, Eye, EyeOff, Loader2, LogIn, ShieldCheck, UserPlus } from 'l
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { fallbackData } from '@/lib/home-data';
-import { supabase } from '@/lib/supabase-client';
+import { useAuth } from '@/components/auth-provider';
 
 type AuthMode = 'login' | 'signup';
 
 export function AuthPage() {
   const router = useRouter();
+  const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<AuthMode>('login');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -52,24 +53,26 @@ export function AuthPage() {
 
     try {
       if (mode === 'login') {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-        if (signInError) throw signInError;
-        router.push('/');
+        const result = await signIn(email.trim(), password);
+        if (!result.ok) {
+          setError(result.error ?? 'ورود ناموفق بود');
+        } else {
+          router.push('/');
+        }
       } else {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name: fullName } },
-        });
-        if (signUpError) throw signUpError;
-        setSuccess('ثبت‌نام موفق بود! اکنون می‌توانید وارد شوید.');
-        setMode('login');
-        setFullName('');
-        setConfirmPassword('');
+        const result = await signUp(fullName.trim() || 'کاربر', email.trim(), password);
+        if (!result.ok) {
+          setError(result.error ?? 'ثبت‌نام ناموفق بود');
+        } else {
+          setSuccess('ثبت‌نام موفق بود! اکنون وارد شده‌اید.');
+          setFullName('');
+          setConfirmPassword('');
+          router.push('/');
+        }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'خطایی رخ داد. دوباره تلاش کنید.';
-      setError(translateError(message));
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -185,12 +188,4 @@ export function AuthPage() {
       <SiteFooter footer={fallbackData.footer} />
     </main>
   );
-}
-
-function translateError(message: string): string {
-  if (message.includes('Invalid login credentials')) return 'ایمیل یا رمز عبور اشتباه است';
-  if (message.includes('User already registered')) return 'این ایمیل قبلاً ثبت شده است. وارد شوید.';
-  if (message.includes('Email not confirmed')) return 'ایمیل شما تأیید نشده است';
-  if (message.includes('Password should be at least')) return 'رمز عبور باید حداقل ۶ کاراکتر باشد';
-  return message;
 }
