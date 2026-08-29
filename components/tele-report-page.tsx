@@ -10,65 +10,44 @@ import {
   FileCheck2,
   Headphones,
   Image as ImageIcon,
-  LockKeyhole,
   MousePointerClick,
-  Network,
   ScanLine,
   ShieldCheck,
   Sparkles,
   Stethoscope,
-  Upload,
-  UsersRound,
 } from 'lucide-react';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import type { FooterSettings } from '@/lib/home-data';
+import type { TeleReportData } from '@/lib/tele-report-data';
 
-type TeleReportPageProps = { footer: FooterSettings };
-
+type TeleReportPageProps = { footer: FooterSettings; data: TeleReportData };
 type IconComponent = typeof BrainCircuit;
 
-type Feature = { title: string; description: string; icon: IconComponent };
+const icons: Record<string, IconComponent> = {
+  brain: BrainCircuit,
+  clock: Clock3,
+  scan: ScanLine,
+  shield: ShieldCheck,
+  clipboard: ClipboardCheck,
+  stethoscope: Stethoscope,
+  download: Download,
+  sparkles: Sparkles,
+  file: FileCheck2,
+  pointer: MousePointerClick,
+  headphones: Headphones,
+};
 
-type Step = { number: string; title: string; description: string; icon: IconComponent };
+function getIcon(name: string): IconComponent {
+  return icons[name] ?? BrainCircuit;
+}
 
-type Guide = { number: string; title: string; description: string };
-
-const features: Feature[] = [
-  { title: 'تحلیل هوشمند', description: 'استفاده از هوش مصنوعی برای تحلیل دقیق تصاویر', icon: BrainCircuit },
-  { title: 'سرعت بالا', description: 'تحویل گزارش‌ در کمتر از ۲۴ ساعت', icon: Clock3 },
-  { title: 'دقت بالا', description: 'گزارش‌نویسی دقیق توسط متخصصان مجرب', icon: ScanLine },
-  { title: 'امنیت اطلاعات', description: 'حفاظت کامل از حریم خصوصی و اطلاعات بیماران', icon: ShieldCheck },
-];
-
-const steps: Step[] = [
-  { number: '۰۱', title: 'ثبت سفارش', description: 'اطلاعات بیمار و نوع تصویربرداری را وارد کنید.', icon: ClipboardCheck },
-  { number: '۰۲', title: 'بررسی تخصصی', description: 'تصاویر شما توسط تیم متخصص بررسی می‌شوند.', icon: Stethoscope },
-  { number: '۰۳', title: 'گزارش هوشمند', description: 'تصاویر با کمک هوش مصنوعی تحلیل می‌شوند.', icon: BrainCircuit },
-  { number: '۰۴', title: 'دریافت گزارش', description: 'گزارش نهایی را به‌صورت آنلاین دریافت کنید.', icon: Download },
-];
-
-const guides: Guide[] = [
-  { number: '۱', title: 'ثبت‌نام و ورود', description: 'در سامانه ثبت‌نام کنید و وارد پنل شوید.' },
-  { number: '۲', title: 'ثبت سفارش', description: 'نوع تصویربرداری و اطلاعات بیمار را وارد کنید.' },
-  { number: '۳', title: 'پرداخت آنلاین', description: 'هزینه را به‌صورت امن پرداخت کنید.' },
-  { number: '۴', title: 'انتظار برای گزارش', description: 'وضعیت سفارش خود را در پنل دنبال کنید.' },
-  { number: '۵', title: 'دریافت گزارش', description: 'گزارش نهایی را مشاهده و دانلود کنید.' },
-];
-
-const benefits: Feature[] = [
-  { title: 'هزینه مناسب', description: 'کیفیت تخصصی با قیمت منصفانه', icon: Sparkles },
-  { title: 'کیفیت بالا', description: 'گزارش‌های دقیق و استاندارد', icon: FileCheck2 },
-  { title: 'کیفیت آسان', description: 'از هر مکان و در هر زمان', icon: MousePointerClick },
-  { title: 'کاهش زمان انتظار', description: 'گزارش سریع بدون معطلی', icon: Download },
-  { title: 'پشتیبانی در دسترس', description: 'همراه شما در تمام مراحل', icon: Headphones },
-];
-
-function EmptyGuideImage() {
+function GuideImage({ imageUrl }: { imageUrl: string }) {
+  if (imageUrl) return <img className="tele-guide__image" src={imageUrl} alt="" />;
   return <div className="tele-guide__image" aria-hidden="true"><ImageIcon size={24} /></div>;
 }
 
-export function TeleReportPage({ footer }: TeleReportPageProps) {
+export function TeleReportPage({ footer, data }: TeleReportPageProps) {
   return (
     <main className="tele-report-page">
       <SiteHeader activePath="/tele-report" />
@@ -76,47 +55,43 @@ export function TeleReportPage({ footer }: TeleReportPageProps) {
       <section className="tele-hero">
         <div className="container tele-hero__inner">
           <div className="tele-hero__copy">
-            <span className="tele-eyebrow">راهکار نوین تصویربرداری پزشکی</span>
-            <h1>تله‌ریپورت رادینت</h1>
-            <h2>گزارش هوشمند تصویربرداری پزشکی با هوش مصنوعی</h2>
-            <p>با بهره‌گیری از پیشرفته‌ترین الگوریتم‌های هوش مصنوعی، تصاویر پزشکی شما را تحلیل کرده و در سریع‌ترین زمان ممکن گزارشی دقیق و قابل اعتماد ارائه می‌دهیم.</p>
+            <span className="tele-eyebrow">{data.hero.eyebrow}</span>
+            <h1>{data.hero.title}</h1>
+            <h2>{data.hero.subtitle}</h2>
+            <p>{data.hero.description}</p>
             <div className="tele-hero__actions">
-              <a className="tele-button tele-button--primary" href="#steps">ثبت درخواست جدید <ArrowLeft size={18} /></a>
-              <a className="tele-button tele-button--secondary" href="#about">مشاهده خدمات <ArrowUpLeft size={17} /></a>
+              <a className="tele-button tele-button--primary" href="/tele-report/new">{data.hero.primaryCta} <ArrowLeft size={18} /></a>
+              <a className="tele-button tele-button--secondary" href="#about">{data.hero.secondaryCta} <ArrowUpLeft size={17} /></a>
             </div>
           </div>
           <div className="tele-hero__visual">
-            <img src="/assets/images/ChatGPT_Image_Aug_25,_2026,_02_46_54_PM.png" alt="محیط هوشمند تله‌ریپورت رادینت" />
+            <img src={data.hero.imageUrl} alt="محیط هوشمند تله‌ریپورت رادینت" />
           </div>
         </div>
       </section>
 
       <section className="tele-features" aria-label="ویژگی‌های کلیدی">
         <div className="container tele-features__grid">
-          {features.map(({ title, description, icon: Icon }) => (
-            <article className="tele-feature-card" key={title}>
+          {data.features.map((feature) => {
+            const Icon = getIcon(feature.icon);
+            return <article className="tele-feature-card" key={feature.title}>
               <div className="tele-icon"><Icon size={25} /></div>
-              <div><h3>{title}</h3><p>{description}</p></div>
-            </article>
-          ))}
+              <div><h3>{feature.title}</h3><p>{feature.description}</p></div>
+            </article>;
+          })}
         </div>
       </section>
 
       <section className="tele-about" id="about">
         <div className="container tele-about__inner">
           <div className="tele-about__copy">
-            <span className="tele-section-kicker">آشنایی با سرویس</span>
-            <h2>تله‌ریپورت رادینت چیست؟</h2>
-            <p>تله‌ریپورت، یک سرویس آنلاین برای تحلیل تصاویر پزشکی با استفاده از هوش مصنوعی است. با این سرویس، می‌توانید در کوتاه‌ترین زمان ممکن گزارش دقیق و تخصصی دریافت کنید.</p>
-            <ul>
-              <li><span><Check size={15} /></span>تحلیل تصاویر پزشکی (X-Ray، CT، MRI و سونوگرافی)</li>
-              <li><span><Check size={15} /></span>گزارش توسط متخصصان مجرب و مورد اعتماد</li>
-              <li><span><Check size={15} /></span>دسترسی آسان و سریع به گزارش</li>
-              <li><span><Check size={15} /></span>قابل استفاده برای پزشکان و مراکز درمانی</li>
-            </ul>
+            <span className="tele-section-kicker">{data.about.eyebrow}</span>
+            <h2>{data.about.title}</h2>
+            <p>{data.about.description}</p>
+            <ul>{data.about.bullets.map((bullet) => <li key={bullet}><span><Check size={15} /></span>{bullet}</li>)}</ul>
           </div>
           <div className="tele-about__media" aria-label="تصویر محیط سرویس">
-            <div className="tele-about__media-content"><Network size={48} /><span>محیط امن تحلیل و دریافت گزارش</span></div>
+            {data.about.imageUrl ? <img src={data.about.imageUrl} alt="محیط سرویس تله‌ریپورت" /> : <div className="tele-about__media-content"><ImageIcon size={48} /><span>تصویر محیط سرویس</span></div>}
           </div>
         </div>
       </section>
@@ -125,16 +100,17 @@ export function TeleReportPage({ footer }: TeleReportPageProps) {
         <div className="container">
           <div className="tele-section-heading"><span className="tele-section-kicker">ساده، سریع و مطمئن</span><h2>مراحل استفاده از سرویس</h2></div>
           <div className="tele-steps__grid">
-            {steps.map(({ number, title, description, icon: Icon }, index) => (
-              <div className="tele-step-wrap" key={number}>
+            {data.steps.map((step, index) => {
+              const Icon = getIcon(step.icon);
+              return <div className="tele-step-wrap" key={step.number}>
                 <article className="tele-step-card">
-                  <div className="tele-step-card__number">{number}</div>
+                  <div className="tele-step-card__number">{step.number}</div>
                   <div className="tele-step-card__icon"><Icon size={25} /></div>
-                  <h3>{title}</h3><p>{description}</p>
+                  <h3>{step.title}</h3><p>{step.description}</p>
                 </article>
-                {index < steps.length - 1 && <ChevronLeft className="tele-step-arrow" size={22} />}
-              </div>
-            ))}
+                {index < data.steps.length - 1 && <ChevronLeft className="tele-step-arrow" size={22} />}
+              </div>;
+            })}
           </div>
         </div>
       </section>
@@ -143,9 +119,11 @@ export function TeleReportPage({ footer }: TeleReportPageProps) {
         <div className="container">
           <div className="tele-section-heading"><span className="tele-section-kicker">راهنمای شروع</span><h2>راهنمای استفاده</h2></div>
           <div className="tele-guide__grid">
-            {guides.map(({ number, title, description }) => (
-              <article className="tele-guide-card" key={number}><EmptyGuideImage /><div className="tele-guide-card__number">{number}</div><h3>{title}</h3><p>{description}</p></article>
-            ))}
+            {data.guides.map((guide) => <article className="tele-guide-card" key={guide.number}>
+              <GuideImage imageUrl={guide.imageUrl} />
+              <div className="tele-guide-card__number">{guide.number}</div>
+              <h3>{guide.title}</h3><p>{guide.description}</p>
+            </article>)}
           </div>
         </div>
       </section>
@@ -154,13 +132,13 @@ export function TeleReportPage({ footer }: TeleReportPageProps) {
         <div className="container">
           <div className="tele-section-heading"><span className="tele-section-kicker">چرا رادینت؟</span><h2>مزایای استفاده از رادینت</h2></div>
           <div className="tele-benefits__grid">
-            {benefits.map(({ title, description, icon: Icon }) => <article className="tele-benefit" key={title}><div className="tele-benefit__icon"><Icon size={30} /></div><h3>{title}</h3><p>{description}</p></article>)}
+            {data.benefits.map((benefit) => { const Icon = getIcon(benefit.icon); return <article className="tele-benefit" key={benefit.title}><div className="tele-benefit__icon"><Icon size={30} /></div><h3>{benefit.title}</h3><p>{benefit.description}</p></article>; })}
           </div>
         </div>
       </section>
 
       <section className="tele-cta">
-        <div className="container"><div className="tele-cta__box"><div className="tele-cta__pattern" aria-hidden="true" /><h2>آماده‌اید تجربه جدیدی در گزارش‌دهی پزشکی را تجربه کنید؟</h2><p>با رادینت، مسیر دریافت گزارش تخصصی کوتاه‌تر و مطمئن‌تر است.</p><a className="tele-button tele-button--primary" href="#steps">همین حالا شروع کنید <ArrowLeft size={18} /></a></div></div>
+        <div className="container"><div className="tele-cta__box"><div className="tele-cta__pattern" aria-hidden="true" /><h2>{data.cta.title}</h2><p>{data.cta.description}</p><a className="tele-button tele-button--primary" href="/tele-report/new">{data.cta.buttonLabel} <ArrowLeft size={18} /></a></div></div>
       </section>
 
       <SiteFooter footer={footer} />

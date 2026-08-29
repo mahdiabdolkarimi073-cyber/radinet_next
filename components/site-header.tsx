@@ -11,6 +11,7 @@ const navItems = [
   { label: 'فروشگاه', href: '/shop' },
   { label: 'جستجوی محصولات', href: '/shop/search' },
   { label: 'تله‌رادیولوژی', href: '/#services' },
+  { label: 'درخواست تله‌ریپورت', href: '/tele-report/new' },
   { label: 'مشاوره', href: '/#services' },
   { label: 'مقالات', href: '/#news' },
   { label: 'پشتیبانی', href: '/support' },
