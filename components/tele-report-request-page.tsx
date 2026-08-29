@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   ArrowRight,
   AlertTriangle,
   Check,
-  CheckCircle2,
   ChevronDown,
   CreditCard,
   FileText,
@@ -121,6 +121,7 @@ const acceptedTypes = '.jpg,.jpeg,.png,.pdf,.dcm,.dicom';
 const maxFileSize = 25 * 1024 * 1024;
 
 export function TeleReportRequestPage({ footer }: TeleReportRequestPageProps) {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [form, setForm] = useState<FormState>(initialForm);
   const [files, setFiles] = useState<UploadedFile[]>([]);
@@ -129,7 +130,6 @@ export function TeleReportRequestPage({ footer }: TeleReportRequestPageProps) {
   const [submitError, setSubmitError] = useState('');
   const [historyFound, setHistoryFound] = useState(false);
   const [checkingNationalId, setCheckingNationalId] = useState(false);
-  const [result, setResult] = useState<{ requestNumber: string } | null>(null);
   const [countryOpen, setCountryOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -296,39 +296,12 @@ export function TeleReportRequestPage({ footer }: TeleReportRequestPageProps) {
       }
 
       const data = await response.json();
-      setResult({ requestNumber: data.requestNumber });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      router.push(`/tele-report/new/referral?requestNumber=${encodeURIComponent(data.requestNumber)}`);
     } catch (err) {
       setSubmitError('ارسال درخواست ناموفق بود. لطفاً دوباره تلاش کنید.');
     } finally {
       setSubmitting(false);
     }
-  }
-
-  if (result) {
-    return (
-      <main className="trr-page">
-        <SiteHeader activePath="/tele-report/new" />
-        <section className="trr-success">
-          <div className="container">
-            <div className="trr-success__card">
-              <div className="trr-success__icon"><CheckCircle2 size={56} /></div>
-              <h1>درخواست شما با موفقیت ثبت شد</h1>
-              <p>کد پیگیری درخواست شما:</p>
-              <div className="trr-success__code">{result.requestNumber}</div>
-              <p className="trr-success__note">
-                این کد را نگه دارید تا از طریق آن بتوانید وضعیت درخواست خود را پیگیری کنید.
-              </p>
-              <div className="trr-success__actions">
-                <a className="trr-btn trr-btn--primary" href="/tele-report">بازگشت به تله‌ریپورت</a>
-                <a className="trr-btn trr-btn--secondary" href="/">صفحه اصلی</a>
-              </div>
-            </div>
-          </div>
-        </section>
-        <SiteFooter footer={footer} />
-      </main>
-    );
   }
 
   return (
