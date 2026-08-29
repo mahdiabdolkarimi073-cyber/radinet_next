@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
+  AlertTriangle,
   Check,
   CheckCircle2,
   ChevronDown,
+  CreditCard,
   FileText,
   Globe,
   GraduationCap,
@@ -125,6 +127,8 @@ export function TeleReportRequestPage({ footer }: TeleReportRequestPageProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [historyFound, setHistoryFound] = useState(false);
+  const [checkingNationalId, setCheckingNationalId] = useState(false);
   const [result, setResult] = useState<{ requestNumber: string } | null>(null);
   const [countryOpen, setCountryOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
@@ -154,6 +158,7 @@ export function TeleReportRequestPage({ footer }: TeleReportRequestPageProps) {
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: '' }));
+    if (key === 'nationalId') setHistoryFound(false);
   }
 
   function validateStep(step: number): boolean {
@@ -188,11 +193,34 @@ export function TeleReportRequestPage({ footer }: TeleReportRequestPageProps) {
     return Object.keys(errs).length === 0;
   }
 
-  function nextStep() {
-    if (validateStep(currentStep) && currentStep < 5) {
-      setCurrentStep((s) => s + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  async function nextStep() {
+    if (!validateStep(currentStep) || currentStep >= 5) return;
+
+    if (currentStep === 2 && form.nationalId.trim()) {
+      setCheckingNationalId(true);
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000';
+        const response = await fetch(`${apiUrl}/api/tele-report/requests/check-patient`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nationalId: form.nationalId.trim() }),
+        });
+        if (!response.ok) throw new Error('history check failed');
+        const data = await response.json() as { hasHistory?: boolean };
+        if (data.hasHistory) {
+          setHistoryFound(true);
+          return;
+        }
+      } catch {
+        setErrors((prev) => ({ ...prev, nationalId: 'بررسی کد ملی انجام نشد. دوباره تلاش کنید.' }));
+        return;
+      } finally {
+        setCheckingNationalId(false);
+      }
     }
+
+    setCurrentStep((s) => s + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function prevStep() {
@@ -330,6 +358,24 @@ export function TeleReportRequestPage({ footer }: TeleReportRequestPageProps) {
             </div>
           ))}
         </div>
+
+        {historyFound && (
+          <div className="trr-history-overlay" role="dialog" aria-modal="true" aria-labelledby="history-title">
+            <div className="trr-history-card">
+              <div className="trr-history-graphic" aria-hidden="true">
+                <div className="trr-history-card-icon"><CreditCard size={54} /></div>
+                <div className="trr-history-check"><Check size={25} /></div>
+              </div>
+              <h2 id="history-title">سابقه‌ای با این کد ملی پیدا شد</h2>
+              <p>برای این بیمار درخواست قبلی در سامانه وجود دارد. می‌توانید با حساب کاربری خود وارد شوید و سوابق درخواست‌ها را مشاهده کنید، یا به عنوان کاربر جدید ادامه دهید.</p>
+              <div className="trr-history-actions">
+                <button className="trr-history-btn trr-history-btn--login" type="button" onClick={() => setSubmitError('برای مشاهده سوابق قبلی، ابتدا باید با حساب کاربری خود وارد شوید.')}>ورود به حساب کاربری</button>
+                <button className="trr-history-btn trr-history-btn--continue" type="button" onClick={() => { setHistoryFound(false); setCurrentStep(3); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>ادامه به عنوان کاربر جدید</button>
+              </div>
+              {submitError && <p className="trr-history-error">{submitError}</p>}
+            </div>
+          </div>
+        )}
 
         <div className="trr-grid">
           {/* Left column — Country & Language (step 1) */}
@@ -715,8 +761,8 @@ export function TeleReportRequestPage({ footer }: TeleReportRequestPageProps) {
                 </button>
               )}
               {currentStep < 5 ? (
-                <button className="trr-btn trr-btn--primary" onClick={nextStep} type="button">
-                  مرحله بعد <ArrowLeft size={18} />
+                <button className="trr-btn trr-btn--primary" onClick={nextStep} disabled={checkingNationalId} type="button">
+                  {checkingNationalId ? <><Loader2 size={18} className="trr-spin" /> در حال بررسی...</> : <>مرحله بعد <ArrowLeft size={18} /></>}
                 </button>
               ) : (
                 <button className="trr-btn trr-btn--primary" onClick={handleSubmit} disabled={submitting} type="button">
@@ -725,6 +771,11 @@ export function TeleReportRequestPage({ footer }: TeleReportRequestPageProps) {
               )}
             </div>
           </section>
+        </div>
+
+        <div className="trr-footer-alert">
+          <AlertTriangle size={16} />
+          <span>اطلاعات بیمار محرمانه است و فقط برای ارائه گزارش تخصصی استفاده می‌شود.</span>
         </div>
       </div>
 

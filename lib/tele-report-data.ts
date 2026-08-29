@@ -54,7 +54,7 @@ export const fallbackTeleReport: TeleReportData = {
     description: 'با بهره‌گیری از پیشرفته‌ترین الگوریتم‌های هوش مصنوعی، تصاویر پزشکی شما را تحلیل کرده و در سریع‌ترین زمان ممکن گزارشی دقیق و قابل اعتماد ارائه می‌دهیم.',
     primaryCta: 'ثبت درخواست جدید',
     secondaryCta: 'مشاهده دمو',
-    imageUrl: '/assets/images/tele-report/تله_ریپورت_اصلی.png',
+    imageUrl: '/assets/images/ChatGPT_Image_Aug_25,_2026,_02_46_54_PM.png',
   },
   features: [
     { title: 'تحلیل هوشمند', description: 'استفاده از هوش مصنوعی برای تحلیل دقیق تصاویر', icon: 'brain' },
