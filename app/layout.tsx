@@ -1,5 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import { AuthProvider } from '@/components/auth-provider';
 
 export const metadata: Metadata = {
   title: 'رادینت | پلتفرم خدمات تصویربرداری پزشکی',
@@ -22,7 +23,7 @@ export default function RootLayout({
         />
       </head>
       <body style={{ fontFamily: "'Vazirmatn', Tahoma, Arial, sans-serif" }}>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

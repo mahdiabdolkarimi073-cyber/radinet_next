@@ -124,8 +124,8 @@ export function ReferralPathPage({ footer }: ReferralPathPageProps) {
               <div className="trr-success__code">{result.requestNumber}</div>
               <p className="trr-success__note">{result.message}</p>
               <div className="trr-success__actions">
-                <a className="trr-btn trr-btn--primary" href="/tele-report">بازگشت به تله‌ریپورت</a>
-                <a className="trr-btn trr-btn--secondary" href="/">صفحه اصلی</a>
+                <a className="trr-btn trr-btn--primary" href={`/tele-report/payment?requestNumber=${encodeURIComponent(result.requestNumber)}`}>پرداخت هزینه خدمت</a>
+                <a className="trr-btn trr-btn--secondary" href="/tele-report">بازگشت به تله‌ریپورت</a>
               </div>
             </div>
           </div>

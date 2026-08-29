@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ChevronDown, Menu, ShoppingCart, X } from 'lucide-react';
+import { ChevronDown, LogOut, Menu, ShoppingCart, User, X } from 'lucide-react';
 import { cartCount, readCart } from '@/lib/cart';
+import { useAuth } from '@/components/auth-provider';
 
 const navItems = [
   { label: 'خانه', href: '/' },
@@ -10,6 +11,7 @@ const navItems = [
   { label: 'خدمات', href: '/#services' },
   { label: 'فروشگاه', href: '/shop' },
   { label: 'جستجوی محصولات', href: '/shop/search' },
+  { label: 'تله‌ریپورت', href: '/tele-report' },
   { label: 'تله‌رادیولوژی', href: '/#services' },
   { label: 'مشاوره', href: '/#services' },
   { label: 'مقالات', href: '/#news' },
@@ -26,6 +28,7 @@ type SiteHeaderProps = {
 export function SiteHeader({ activePath }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [count, setCount] = useState(0);
+  const { user, loading, signOut } = useAuth();
 
   useEffect(() => {
     const update = () => setCount(cartCount(readCart()));
@@ -61,8 +64,17 @@ export function SiteHeader({ activePath }: SiteHeaderProps) {
           <a className="cart-button" href="/shop/cart" aria-label="سبد خرید">
             <ShoppingCart size={18} />{count > 0 && <em>{count.toLocaleString('fa-IR')}</em>}
           </a>
-          <button className="button button--outline">ورود</button>
-          <button className="button button--primary">ثبت‌نام</button>
+          {loading ? null : user ? (
+            <>
+              <span className="header-user"><User size={16} /> {user.email?.split('@')[0]}</span>
+              <button className="button button--outline" onClick={() => void signOut()}><LogOut size={16} /> خروج</button>
+            </>
+          ) : (
+            <>
+              <a className="button button--outline" href="/auth">ورود</a>
+              <a className="button button--primary" href="/auth?mode=signup">ثبت‌نام</a>
+            </>
+          )}
         </div>
       </div>
     </header>
