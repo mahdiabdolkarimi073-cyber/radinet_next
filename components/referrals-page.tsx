@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Bell,
   CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  CheckCircle2,
   Eye,
   FileText,
   Filter,
@@ -17,9 +19,9 @@ import {
   Search,
   Settings,
   Stethoscope,
+  UsersRound,
   X,
   XCircle,
-  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth-provider';
 
@@ -59,7 +61,7 @@ const navItems = [
   { label: 'داشبورد', href: '/dashboard', icon: LayoutDashboard },
   { label: 'درخواست‌های ارجاعی', href: '/dashboard/referrals', icon: ClipboardList, active: true },
   { label: 'گزارش‌ها', href: '/dashboard/reports', icon: FileText },
-  { label: 'بیماران', href: '/dashboard/patients', icon: Stethoscope },
+  { label: 'بیماران', href: '/dashboard/patients', icon: UsersRound },
   { label: 'اعلان‌ها', href: '/dashboard/notifications', icon: Bell },
   { label: 'تنظیمات', href: '/dashboard/settings', icon: Settings },
 ];
@@ -94,11 +96,11 @@ function formatTime(value: string): string {
 }
 
 export function ReferralsPage() {
-  const { user, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const [filters, setFilters] = useState<FilterValues>(initialFilters);
   const [data, setData] = useState<ReferralResponse | null>(null);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [viewing, setViewing] = useState<ReferralItem | null>(null);
@@ -113,7 +115,7 @@ export function ReferralsPage() {
   }, [filters, page]);
 
   const loadReferrals = useCallback(async () => {
-    setLoading(true);
+    setIsLoading(true);
     setError('');
     try {
       const token = window.localStorage.getItem('radinet_auth_token');
@@ -128,7 +130,7 @@ export function ReferralsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطایی رخ داد.');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }, [query]);
 
@@ -170,30 +172,16 @@ export function ReferralsPage() {
 
   return (
     <div className="referrals-root">
-      <header className="referrals-header">
-        <div className="referrals-header__right">
-          <button className="referrals-burger" onClick={() => setSidebarOpen((value) => !value)} aria-label="منو">
-            {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-          <a href="/dashboard" className="referrals-logo">
-            <span>◈</span>
-            <strong>رادینت</strong>
-          </a>
-        </div>
-        <h1>مدیریت درخواست‌های ارجاعی</h1>
-        <div className="referrals-profile">
-          <div className="referrals-avatar">{user?.fullName?.charAt(0) ?? 'د'}</div>
-          <div>
-            <strong>{user?.fullName ?? 'دکتر احمدی'}</strong>
-            <span>پزشک رادیولوژیست</span>
-          </div>
-        </div>
-      </header>
-
-      <div className="referrals-layout">
+      <div className="referrals-shell">
         <aside className={`referrals-sidebar ${sidebarOpen ? 'is-open' : ''}`}>
-          <div className="referrals-sidebar__label">منوی اصلی</div>
-          <nav>
+          <div className="referrals-brand">
+            <div className="referrals-brand__mark"><Stethoscope size={29} strokeWidth={1.7} /></div>
+            <div>
+              <strong>داشبورد</strong>
+              <span>سامانه مدیریت خدمات پزشکی</span>
+            </div>
+          </div>
+          <nav className="referrals-nav" aria-label="منوی داشبورد">
             {navItems.map((item) => (
               <a
                 key={item.label}
@@ -201,125 +189,150 @@ export function ReferralsPage() {
                 className={`referrals-nav-item ${item.active ? 'is-active' : ''}`}
                 onClick={() => setSidebarOpen(false)}
               >
-                <item.icon size={20} />
+                <item.icon size={22} strokeWidth={1.8} />
                 <span>{item.label}</span>
               </a>
             ))}
           </nav>
-          <button className="referrals-nav-item referrals-nav-item--logout" onClick={() => signOut()}>
-            <LogOut size={20} />
+          <button className="referrals-nav-item--logout" onClick={() => void signOut()}>
+            <LogOut size={22} strokeWidth={1.8} />
             <span>خروج از حساب</span>
           </button>
         </aside>
+
         {sidebarOpen && <div className="referrals-overlay" onClick={() => setSidebarOpen(false)} />}
 
-        <main className="referrals-main">
-          <div className="referrals-title">
-            <div>
-              <h2>درخواست‌های ارجاعی</h2>
-              <p>مدیریت و بررسی درخواست‌های تصویربرداری بیماران</p>
+        <div className="referrals-content">
+          <header className="referrals-header">
+            <button className="referrals-burger" onClick={() => setSidebarOpen((open) => !open)} aria-label="باز کردن منو">
+              {sidebarOpen ? <X size={23} /> : <Menu size={23} />}
+            </button>
+            <div className="referrals-profile">
+              <div className="referrals-avatar">{user?.fullName?.charAt(0) ?? 'م'}</div>
+              <div>
+                <strong>{loading ? 'در حال بارگذاری…' : user?.fullName ?? 'مهدی عبدالكریمی'}</strong>
+                <span>مدیریت هوشمند خدمات پزشکی</span>
+              </div>
+              <ChevronDown className="referrals-profile__chevron" size={17} />
             </div>
-            <a href="/dashboard" className="back-dashboard">
-              <ChevronRight size={16} /> بازگشت به داشبورد
-            </a>
-          </div>
+            <div className="referrals-header__actions">
+              <button className="referrals-header__icon referrals-header__icon--notification" aria-label="اعلان‌ها">
+                <Bell size={25} strokeWidth={1.7} />
+                <span>۳</span>
+              </button>
+              <span className="referrals-header__divider" />
+              <button className="referrals-header__icon" aria-label="تقویم"><CalendarDays size={25} strokeWidth={1.7} /></button>
+            </div>
+          </header>
 
-          <section className="referrals-filter-card">
-            <div className="referrals-filter-row">
-              <label>
-                <span>وضعیت</span>
-                <select value={filters.status} onChange={(event) => updateFilter('status', event.target.value)}>
-                  <option value="all">همه وضعیت‌ها</option>
-                  <option value="new">جدید</option>
-                  <option value="in_progress">در حال بررسی</option>
-                  <option value="completed">تکمیل شده</option>
-                  <option value="rejected">رد شده</option>
-                </select>
-              </label>
-              <label>
-                <span>نوع تصویربرداری</span>
-                <select value={filters.imagingType} onChange={(event) => updateFilter('imagingType', event.target.value)}>
-                  <option value="all">همه انواع</option>
-                  <option value="MRI">MRI</option>
-                  <option value="CT">CT</option>
-                  <option value="X-Ray">X-Ray</option>
-                  <option value="سونوگرافی">سونوگرافی</option>
-                </select>
-              </label>
-              <label>
-                <span>از تاریخ</span>
-                <div className="referrals-date-input">
-                  <CalendarDays size={18} />
-                  <input type="date" value={filters.from} onChange={(event) => updateFilter('from', event.target.value)} />
-                </div>
-              </label>
-              <label>
-                <span>تا تاریخ</span>
-                <div className="referrals-date-input">
-                  <CalendarDays size={18} />
-                  <input type="date" value={filters.to} onChange={(event) => updateFilter('to', event.target.value)} />
-                </div>
-              </label>
+          <main className="referrals-main">
+            <div className="referrals-title">
+              <div>
+                <h2>درخواست‌های ارجاعی</h2>
+                <p>مدیریت و بررسی درخواست‌های تصویربرداری بیماران</p>
+              </div>
+              <a href="/dashboard" className="back-dashboard">
+                <ChevronRight size={16} /> بازگشت به داشبورد
+              </a>
             </div>
-            <div className="referrals-search">
-              <Search size={18} />
-              <input
-                value={filters.search}
-                onChange={(event) => updateFilter('search', event.target.value)}
-                placeholder="جستجو بر اساس کد درخواست یا نام بیمار..."
-              />
-              <Filter size={18} />
-            </div>
-          </section>
 
-          {error && <div className="referrals-error">{error}</div>}
+            <section className="referrals-filter-card">
+              <div className="referrals-filter-row">
+                <label>
+                  <span>وضعیت</span>
+                  <select value={filters.status} onChange={(event) => updateFilter('status', event.target.value)}>
+                    <option value="all">همه وضعیت‌ها</option>
+                    <option value="new">جدید</option>
+                    <option value="in_progress">در حال بررسی</option>
+                    <option value="completed">تکمیل شده</option>
+                    <option value="rejected">رد شده</option>
+                  </select>
+                </label>
+                <label>
+                  <span>نوع تصویربرداری</span>
+                  <select value={filters.imagingType} onChange={(event) => updateFilter('imagingType', event.target.value)}>
+                    <option value="all">همه انواع</option>
+                    <option value="MRI">MRI</option>
+                    <option value="CT">CT</option>
+                    <option value="X-Ray">X-Ray</option>
+                    <option value="سونوگرافی">سونوگرافی</option>
+                  </select>
+                </label>
+                <label>
+                  <span>از تاریخ</span>
+                  <div className="referrals-date-input">
+                    <CalendarDays size={18} />
+                    <input type="date" value={filters.from} onChange={(event) => updateFilter('from', event.target.value)} />
+                  </div>
+                </label>
+                <label>
+                  <span>تا تاریخ</span>
+                  <div className="referrals-date-input">
+                    <CalendarDays size={18} />
+                    <input type="date" value={filters.to} onChange={(event) => updateFilter('to', event.target.value)} />
+                  </div>
+                </label>
+              </div>
+              <div className="referrals-search">
+                <Search size={18} />
+                <input
+                  value={filters.search}
+                  onChange={(event) => updateFilter('search', event.target.value)}
+                  placeholder="جستجو بر اساس کد درخواست یا نام بیمار..."
+                />
+                <Filter size={18} />
+              </div>
+            </section>
 
-          <section className="referrals-table-card">
-            <div className="referrals-table-meta">
-              <strong>فهرست درخواست‌ها</strong>
-              <span>{data?.total?.toLocaleString('fa-IR') ?? '۰'} درخواست ثبت‌شده</span>
-            </div>
-            <div className="referrals-table-wrap">
-              <table className="referrals-table">
-                <thead>
-                  <tr>
-                    <th><input type="checkbox" checked={Boolean(data?.items.length) && selected.length === data?.items.length} onChange={toggleAll} /></th>
-                    <th>کد درخواست</th>
-                    <th>بیمار</th>
-                    <th>نوع درخواست</th>
-                    <th>تاریخ</th>
-                    <th>زمان</th>
-                    <th>وضعیت</th>
-                    <th>عملیات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading && (
+            {error && <div className="referrals-error">{error}</div>}
+
+            <section className="referrals-table-card">
+              <div className="referrals-table-meta">
+                <strong>فهرست درخواست‌ها</strong>
+                <span>{data?.total?.toLocaleString('fa-IR') ?? '۰'} درخواست ثبت‌شده</span>
+              </div>
+              <div className="referrals-table-wrap">
+                <table className="referrals-table">
+                  <thead>
                     <tr>
-                      <td colSpan={8} className="referrals-empty">در حال دریافت درخواست‌ها…</td>
+                      <th><input type="checkbox" checked={Boolean(data?.items.length) && selected.length === data?.items.length} onChange={toggleAll} /></th>
+                      <th>کد درخواست</th>
+                      <th>بیمار</th>
+                      <th>نوع درخواست</th>
+                      <th>تاریخ</th>
+                      <th>زمان</th>
+                      <th>وضعیت</th>
+                      <th>عملیات</th>
                     </tr>
-                  )}
-                  {!loading && data?.items.map((item) => (
-                    <ReferralRow
-                      key={item.id}
-                      item={item}
-                      selected={selected.includes(item.id)}
-                      onSelect={() => toggleSelected(item.id)}
-                      onView={() => setViewing(item)}
-                      onUpdateStatus={updateStatus}
-                    />
-                  ))}
-                  {!loading && data?.items.length === 0 && (
-                    <tr>
-                      <td colSpan={8} className="referrals-empty">درخواستی با این فیلترها پیدا نشد.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            {!loading && data && <Pagination page={data.page} pages={data.pages} onPageChange={setPage} />}
-          </section>
-        </main>
+                  </thead>
+                  <tbody>
+                    {isLoading && (
+                      <tr>
+                        <td colSpan={8} className="referrals-empty">در حال دریافت درخواست‌ها…</td>
+                      </tr>
+                    )}
+                    {!isLoading && data?.items.map((item) => (
+                      <ReferralRow
+                        key={item.id}
+                        item={item}
+                        selected={selected.includes(item.id)}
+                        onSelect={() => toggleSelected(item.id)}
+                        onView={() => setViewing(item)}
+                        onUpdateStatus={updateStatus}
+                      />
+                    ))}
+                    {!isLoading && data?.items.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="referrals-empty">درخواستی با این فیلترها پیدا نشد.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {!isLoading && data && <Pagination page={data.page} pages={data.pages} onPageChange={setPage} />}
+            </section>
+          </main>
+        </div>
       </div>
 
       {viewing && (
