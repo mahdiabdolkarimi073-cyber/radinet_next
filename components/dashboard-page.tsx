@@ -15,6 +15,8 @@ import {
   Menu,
   Settings,
   Stethoscope,
+  TrendingUp,
+  TrendingDown,
   X,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth-provider';
@@ -49,10 +51,10 @@ const navItems = [
 ];
 
 const quickActions = [
-  { label: 'ثبت درخواست تله‌ریپورت', href: '/tele-report/new', icon: FileText },
-  { label: 'مشاهده درخواست‌های ارجاعی', href: '/dashboard/referrals', icon: ClipboardList },
-  { label: 'پیگیری سفارش', href: '/shop/tracking', icon: Activity },
-  { label: 'تنظیمات حساب', href: '/dashboard/settings', icon: Settings },
+  { label: 'ثبت درخواست تله‌ریپورت', href: '/tele-report/new', icon: FileText, color: 'blue' },
+  { label: 'مشاهده درخواست‌های ارجاعی', href: '/dashboard/referrals', icon: ClipboardList, color: 'green' },
+  { label: 'پیگیری سفارش', href: '/shop/tracking', icon: Activity, color: 'amber' },
+  { label: 'تنظیمات حساب', href: '/dashboard/settings', icon: Settings, color: 'slate' },
 ];
 
 function relativeTime(iso: string): string {
@@ -67,10 +69,10 @@ function relativeTime(iso: string): string {
 }
 
 const statusConfig = {
-  warning: { color: '#F59E0B', bg: '#FEF3C7', icon: Clock },
-  success: { color: '#10B981', bg: '#D1FAE5', icon: CheckCircle2 },
+  warning: { color: '#D97706', bg: '#FEF3C7', icon: Clock },
+  success: { color: '#059669', bg: '#D1FAE5', icon: CheckCircle2 },
   info: { color: '#2563EB', bg: '#DBEAFE', icon: Activity },
-  error: { color: '#EF4444', bg: '#FEE2E2', icon: AlertCircle },
+  error: { color: '#DC2626', bg: '#FEE2E2', icon: AlertCircle },
 };
 
 export function DashboardPage() {
@@ -95,26 +97,25 @@ export function DashboardPage() {
   }, []);
 
   const stats = [
-    { label: 'درخواست‌های جدید', value: data?.stats.new ?? 0, change: '+۱۲٪', positive: true, color: '#F59E0B', bg: '#FEF3C7', icon: Bell },
+    { label: 'درخواست‌های جدید', value: data?.stats.new ?? 0, change: '+۱۲٪', positive: true, color: '#D97706', bg: '#FEF3C7', icon: Bell },
     { label: 'در حال بررسی', value: data?.stats.inReview ?? 0, change: '+۵٪', positive: true, color: '#2563EB', bg: '#DBEAFE', icon: Clock },
-    { label: 'تکمیل‌شده', value: data?.stats.completed ?? 0, change: '+۸٪', positive: true, color: '#10B981', bg: '#D1FAE5', icon: CheckCircle2 },
+    { label: 'تکمیل‌شده', value: data?.stats.completed ?? 0, change: '+۸٪', positive: true, color: '#059669', bg: '#D1FAE5', icon: CheckCircle2 },
     { label: 'مجموع درخواست‌ها', value: data?.stats.total ?? 0, change: '-۳٪', positive: false, color: '#1E40AF', bg: '#EFF6FF', icon: ClipboardList },
   ];
 
   return (
     <div className="dashboard-root">
-      {/* Header */}
       <header className="dash-header">
         <div className="dash-header__right">
           <button className="dash-burger" onClick={() => setSidebarOpen((v) => !v)} aria-label="منو">
             {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
-          <div className="dash-logo">
+          <a href="/dashboard" className="dash-logo">
             <span className="dash-logo__mark">◈</span>
             <span className="dash-logo__text">رادینت</span>
-          </div>
+          </a>
         </div>
-        <h1 className="dash-header__title">داشبورد اختصاصی</h1>
+        <h1 className="dash-header__title">داشبورد پزشک</h1>
         <div className="dash-header__left">
           <div className="dash-avatar">
             {user?.fullName?.charAt(0) ?? 'د'}
@@ -127,8 +128,8 @@ export function DashboardPage() {
       </header>
 
       <div className="dash-layout">
-        {/* Sidebar */}
         <aside className={`dash-sidebar ${sidebarOpen ? 'is-open' : ''}`}>
+          <div className="dash-sidebar__label">منوی اصلی</div>
           <nav className="dash-nav">
             {navItems.map((item) => (
               <a
@@ -150,26 +151,30 @@ export function DashboardPage() {
 
         {sidebarOpen && <div className="dash-overlay" onClick={() => setSidebarOpen(false)} />}
 
-        {/* Main */}
         <main className="dash-main">
           <section className="dash-welcome">
-            <h2>سلام {user?.fullName ?? 'دکتر احمدی'}</h2>
-            <p>خوش آمدید به پنل شخصی خود</p>
+            <div className="dash-welcome__text">
+              <h2>سلام، {user?.fullName ?? 'دکتر احمدی'}</h2>
+              <p>خوش آمدید به پنل مدیریت رادینت. در اینجا می‌توانید درخواست‌ها و گزارش‌های خود را مدیریت کنید.</p>
+            </div>
+            <div className="dash-welcome__badge">
+              <Stethoscope size={28} />
+            </div>
           </section>
 
           {error && <div className="dash-error">{error}</div>}
 
-          {/* Stat cards */}
           <section className="dash-stats">
             {stats.map((stat) => (
               <div className="dash-stat" key={stat.label}>
                 <div className="dash-stat__icon" style={{ background: stat.bg, color: stat.color }}>
-                  <stat.icon size={20} />
+                  <stat.icon size={24} strokeWidth={1.8} />
                 </div>
                 <div className="dash-stat__body">
                   <span>{stat.label}</span>
                   <strong>{stat.value.toLocaleString('fa-IR')}</strong>
                   <em className={stat.positive ? 'is-positive' : 'is-negative'}>
+                    {stat.positive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                     {stat.change}
                   </em>
                 </div>
@@ -177,12 +182,11 @@ export function DashboardPage() {
             ))}
           </section>
 
-          {/* Bottom row */}
           <section className="dash-bottom">
-            {/* Notifications */}
             <div className="dash-card dash-card--notifications">
               <div className="dash-card__head">
-                <h3>اطلاعات جدید</h3>
+                <h3>اعلان‌های اخیر</h3>
+                <span className="dash-card__count">{data?.notifications.length ?? 0}</span>
               </div>
               <ul className="dash-notif-list">
                 {(data?.notifications ?? []).map((notif) => {
@@ -191,7 +195,7 @@ export function DashboardPage() {
                   return (
                     <li key={notif.id} className="dash-notif">
                       <div className="dash-notif__icon" style={{ background: cfg.bg, color: cfg.color }}>
-                        <Icon size={16} />
+                        <Icon size={18} />
                       </div>
                       <div className="dash-notif__body">
                         <strong>{notif.title}</strong>
@@ -209,20 +213,22 @@ export function DashboardPage() {
                 )}
               </ul>
               <a href="/dashboard/notifications" className="dash-card__link">
-                مشاهده <ChevronLeft size={14} />
+                مشاهده همه <ChevronLeft size={16} />
               </a>
             </div>
 
-            {/* Quick access */}
             <div className="dash-card dash-card--quick">
               <div className="dash-card__head">
                 <h3>دسترسی سریع</h3>
               </div>
               <div className="dash-quick">
                 {quickActions.map((action) => (
-                  <a key={action.label} href={action.href} className="dash-quick__btn">
-                    <action.icon size={20} />
+                  <a key={action.label} href={action.href} className={`dash-quick__btn dash-quick__btn--${action.color}`}>
+                    <span className="dash-quick__icon">
+                      <action.icon size={22} strokeWidth={1.8} />
+                    </span>
                     <span>{action.label}</span>
+                    <ChevronLeft size={18} className="dash-quick__arrow" />
                   </a>
                 ))}
               </div>
