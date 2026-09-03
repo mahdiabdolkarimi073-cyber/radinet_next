@@ -1,4 +1,4 @@
-import './patient-file.css';
+import '../patient-file.css';
 import { PatientFilePage } from '@/components/patient-file-page';
 
 export const metadata = { title: 'پرونده بیمار | رادینت' };
