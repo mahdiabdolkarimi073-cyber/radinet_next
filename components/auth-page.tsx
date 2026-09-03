@@ -56,8 +56,10 @@ export function AuthPage() {
         const result = await signIn(email.trim(), password);
         if (!result.ok) {
           setError(result.error ?? 'ورود ناموفق بود');
+        } else if (result.role === 'admin') {
+          window.location.href = '/admin';
         } else {
-          router.push(result.role === 'admin' ? '/admin' : '/dashboard');
+          window.location.href = '/dashboard';
         }
       } else {
         const result = await signUp(fullName.trim() || 'کاربر', email.trim(), password);
@@ -67,7 +69,7 @@ export function AuthPage() {
           setSuccess('ثبت‌نام موفق بود! اکنون وارد شده‌اید.');
           setFullName('');
           setConfirmPassword('');
-          router.push('/dashboard');
+          window.location.href = '/dashboard';
         }
       }
     } catch (err) {
