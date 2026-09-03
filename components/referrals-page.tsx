@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Eye,
   FileText,
+  FilePlus2,
   Filter,
   LayoutDashboard,
   LogOut,
@@ -376,6 +377,14 @@ export function ReferralsPage() {
               </div>
             </div>
             <button className="referrals-modal__button" onClick={() => setViewing(null)}>بستن</button>
+            <div className="referrals-modal__links">
+              <a href={`/dashboard/patients/${viewing.id}`} className="referrals-modal__link">
+                <Eye size={18} /> پرونده بیمار
+              </a>
+              <a href={`/dashboard/reports/new?requestId=${viewing.id}`} className="referrals-modal__link referrals-modal__link--report">
+                <FilePlus2 size={18} /> ثبت گزارش
+              </a>
+            </div>
           </div>
         </div>
       )}
@@ -410,9 +419,12 @@ function ReferralRow({ item, selected, onSelect, onView, onUpdateStatus }: {
       </td>
       <td data-label="عملیات">
         <div className="referral-actions">
-          <button className="referral-action referral-action--view" onClick={onView} title="مشاهده">
+          <a className="referral-action referral-action--view" href={`/dashboard/patients/${item.id}`} title="پرونده بیمار">
             <Eye size={16} />
-          </button>
+          </a>
+          <a className="referral-action referral-action--report" href={`/dashboard/reports/new?requestId=${item.id}`} title="ثبت گزارش">
+            <FilePlus2 size={16} />
+          </a>
           {item.status === 'rejected' ? (
             <button className="referral-action referral-action--restore" onClick={() => onUpdateStatus(item.id, 'new')} title="بازگردانی">
               <RotateCcw size={16} />

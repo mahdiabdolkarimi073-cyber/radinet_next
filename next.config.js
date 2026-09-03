@@ -6,6 +6,7 @@ const nextConfig = {
   swcMinify: true,
   productionBrowserSourceMaps: false,
   experimental: { optimizePackageImports: ['lucide-react'] },
+  turbopack: { root: __dirname },
 };
 
 module.exports = nextConfig;

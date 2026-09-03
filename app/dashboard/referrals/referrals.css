@@ -222,6 +222,8 @@
 }
 .referral-action--view { border-color: #cad8eb; color: #1456c3; }
 .referral-action--view:hover { background: #1456c3; color: #fff; border-color: #1456c3; }
+.referral-action--report { border-color: #b8e6d2; color: #168a68; }
+.referral-action--report:hover { background: #168a68; color: #fff; border-color: #168a68; }
 .referral-action--accept { border-color: #b8e6d2; color: #168a68; }
 .referral-action--accept:hover { background: #168a68; color: #fff; border-color: #168a68; }
 .referral-action--reject { border-color: #f2c6c9; color: #d94b55; }
@@ -325,6 +327,16 @@
   transition: background .2s ease;
 }
 .referrals-modal__button:hover { background: #0b2a5b; }
+.referrals-modal__links { display: flex; gap: 12px; padding: 0 28px 24px; }
+.referrals-modal__link {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; border-radius: 10px; font-size: 14px; font-weight: 700;
+  text-decoration: none; border: 1px solid #cad8eb; color: #1456c3;
+  transition: all .15s ease;
+}
+.referrals-modal__link:hover { background: #1456c3; color: #fff; border-color: #1456c3; }
+.referrals-modal__link--report { border-color: #b8e6d2; color: #168a68; }
+.referrals-modal__link--report:hover { background: #168a68; color: #fff; border-color: #168a68; }
 
 /* ── Responsive ── */
 @media (max-width: 1100px) {
