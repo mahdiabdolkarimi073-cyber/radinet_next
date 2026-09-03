@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Bell,
+  Archive,
   Bold,
   CalendarDays,
   ChevronDown,
@@ -16,13 +16,14 @@ import {
   Loader2,
   LogOut,
   Menu,
+  MessageCircleQuestion,
   PenTool,
   Save,
   Send,
-  Settings,
   Stethoscope,
   Trash2,
   Underline,
+  UserCog,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -68,8 +69,9 @@ const navItems = [
   { label: 'درخواست‌های ارجاعی', href: '/dashboard/referrals', icon: ClipboardList },
   { label: 'گزارش‌ها', href: '/dashboard/reports', icon: FileText, active: true },
   { label: 'بیماران', href: '/dashboard/patients', icon: UsersRound },
-  { label: 'اعلان‌ها', href: '/dashboard/notifications', icon: Bell },
-  { label: 'تنظیمات', href: '/dashboard/settings', icon: Settings },
+  { label: 'درخواست اطلاعات تکمیلی', href: '/dashboard/info-requests', icon: MessageCircleQuestion },
+  { label: 'آرشیو گزارش‌ها', href: '/dashboard/report-archive', icon: Archive },
+  { label: 'پروفایل تخصصی', href: '/dashboard/doctor-profile', icon: UserCog },
 ];
 
 const backendBaseUrl =
@@ -333,11 +335,6 @@ export function ReportEditorPage({ reportId, requestId }: { reportId?: string; r
               <ChevronDown className="re-profile__chevron" size={17} />
             </div>
             <div className="re-header__actions">
-              <button className="re-header__icon re-header__icon--notification" aria-label="اعلان‌ها">
-                <Bell size={25} strokeWidth={1.7} />
-                <span>۳</span>
-              </button>
-              <span className="re-header__divider" />
               <button className="re-header__icon" aria-label="تقویم"><CalendarDays size={25} strokeWidth={1.7} /></button>
             </div>
           </header>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Bell,
+  Archive,
   CalendarDays,
   ChevronDown,
   ChevronLeft,
@@ -17,8 +17,8 @@ import {
   Plus,
   Search,
   Send,
-  Settings,
   Stethoscope,
+  UserCog,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -67,8 +67,8 @@ const navItems = [
   { label: 'گزارش‌ها', href: '/dashboard/reports', icon: FileText },
   { label: 'بیماران', href: '/dashboard/patients', icon: UsersRound },
   { label: 'درخواست اطلاعات تکمیلی', href: '/dashboard/info-requests', icon: MessageCircleQuestion, active: true },
-  { label: 'آرشیو گزارش‌ها', href: '/dashboard/report-archive', icon: FileText },
-  { label: 'پروفایل تخصصی', href: '/dashboard/doctor-profile', icon: Settings },
+  { label: 'آرشیو گزارش‌ها', href: '/dashboard/report-archive', icon: Archive },
+  { label: 'پروفایل تخصصی', href: '/dashboard/doctor-profile', icon: UserCog },
 ];
 
 const statusClasses: Record<string, string> = {
@@ -227,11 +227,6 @@ export function InfoRequestsPage() {
               <ChevronDown className="info-req-profile__chevron" size={17} />
             </div>
             <div className="info-req-header__actions">
-              <button className="info-req-header__icon info-req-header__icon--notification" aria-label="اعلان‌ها">
-                <Bell size={25} strokeWidth={1.7} />
-                <span>۳</span>
-              </button>
-              <span className="info-req-header__divider" />
               <button className="info-req-header__icon" aria-label="تقویم"><CalendarDays size={25} strokeWidth={1.7} /></button>
             </div>
           </header>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Bell,
+  Archive,
   CalendarDays,
   ChevronDown,
   ChevronLeft,
@@ -14,9 +14,10 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageCircleQuestion,
   Search,
-  Settings,
   Stethoscope,
+  UserCog,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -61,8 +62,9 @@ const navItems = [
   { label: 'درخواست‌های ارجاعی', href: '/dashboard/referrals', icon: ClipboardList },
   { label: 'گزارش‌ها', href: '/dashboard/reports', icon: FileText, active: true },
   { label: 'بیماران', href: '/dashboard/patients', icon: UsersRound },
-  { label: 'اعلان‌ها', href: '/dashboard/notifications', icon: Bell },
-  { label: 'تنظیمات', href: '/dashboard/settings', icon: Settings },
+  { label: 'درخواست اطلاعات تکمیلی', href: '/dashboard/info-requests', icon: MessageCircleQuestion },
+  { label: 'آرشیو گزارش‌ها', href: '/dashboard/report-archive', icon: Archive },
+  { label: 'پروفایل تخصصی', href: '/dashboard/doctor-profile', icon: UserCog },
 ];
 
 const statusLabels: Record<string, string> = {
@@ -175,11 +177,6 @@ export function ReportsListPage() {
               <ChevronDown className="reports-list-profile__chevron" size={17} />
             </div>
             <div className="reports-list-header__actions">
-              <button className="reports-list-header__icon reports-list-header__icon--notification" aria-label="اعلان‌ها">
-                <Bell size={25} strokeWidth={1.7} />
-                <span>۳</span>
-              </button>
-              <span className="reports-list-header__divider" />
               <button className="reports-list-header__icon" aria-label="تقویم"><CalendarDays size={25} strokeWidth={1.7} /></button>
             </div>
           </header>

@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
+  Archive,
   Award,
-  Bell,
   Briefcase,
   Building2,
   CalendarDays,
@@ -19,9 +19,9 @@ import {
   Menu,
   MessageCircleQuestion,
   Save,
-  Settings,
   Stethoscope,
   User,
+  UserCog,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -65,8 +65,8 @@ const navItems = [
   { label: 'گزارش‌ها', href: '/dashboard/reports', icon: FileText },
   { label: 'بیماران', href: '/dashboard/patients', icon: UsersRound },
   { label: 'درخواست اطلاعات تکمیلی', href: '/dashboard/info-requests', icon: MessageCircleQuestion },
-  { label: 'آرشیو گزارش‌ها', href: '/dashboard/report-archive', icon: FileText },
-  { label: 'پروفایل تخصصی', href: '/dashboard/doctor-profile', icon: Settings, active: true },
+  { label: 'آرشیو گزارش‌ها', href: '/dashboard/report-archive', icon: Archive },
+  { label: 'پروفایل تخصصی', href: '/dashboard/doctor-profile', icon: UserCog, active: true },
 ];
 
 function formatDate(value: string): string {
@@ -214,11 +214,6 @@ export function DoctorProfilePage() {
               <ChevronDown className="doc-profile-profile__chevron" size={17} />
             </div>
             <div className="doc-profile-header__actions">
-              <button className="doc-profile-header__icon doc-profile-header__icon--notification" aria-label="اعلان‌ها">
-                <Bell size={25} strokeWidth={1.7} />
-                <span>۳</span>
-              </button>
-              <span className="doc-profile-header__divider" />
               <button className="doc-profile-header__icon" aria-label="تقویم"><CalendarDays size={25} strokeWidth={1.7} /></button>
             </div>
           </header>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import {
-  Bell,
+  Archive,
   CalendarDays,
   ChevronDown,
   ChevronLeft,
@@ -14,8 +14,9 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  Settings,
+  MessageCircleQuestion,
   Stethoscope,
+  UserCog,
   UsersRound,
   X,
   ZoomIn,
@@ -82,9 +83,10 @@ const navItems = [
   { label: 'داشبورد', href: '/dashboard', icon: LayoutDashboard },
   { label: 'درخواست‌های ارجاعی', href: '/dashboard/referrals', icon: ClipboardList },
   { label: 'گزارش‌ها', href: '/dashboard/reports', icon: FileText },
-  { label: 'بیماران', href: '/dashboard/patients', icon: UsersRound },
-  { label: 'اعلان‌ها', href: '/dashboard/notifications', icon: Bell },
-  { label: 'تنظیمات', href: '/dashboard/settings', icon: Settings },
+  { label: 'بیماران', href: '/dashboard/patients', icon: UsersRound, active: true },
+  { label: 'درخواست اطلاعات تکمیلی', href: '/dashboard/info-requests', icon: MessageCircleQuestion },
+  { label: 'آرشیو گزارش‌ها', href: '/dashboard/report-archive', icon: Archive },
+  { label: 'پروفایل تخصصی', href: '/dashboard/doctor-profile', icon: UserCog },
 ];
 
 const statusLabels: Record<string, string> = {
@@ -172,7 +174,7 @@ export function PatientFilePage({ patientId }: { patientId: string }) {
           </div>
           <nav className="pf-nav" aria-label="منوی داشبورد">
             {navItems.map((item) => (
-              <a key={item.label} href={item.href} className={`pf-nav__item ${item.label === 'بیماران' ? 'is-active' : ''}`} onClick={() => setSidebarOpen(false)}>
+              <a key={item.label} href={item.href} className={`pf-nav__item ${item.active ? 'is-active' : ''}`} onClick={() => setSidebarOpen(false)}>
                 <item.icon size={22} strokeWidth={1.8} />
                 <span>{item.label}</span>
               </a>
@@ -200,11 +202,6 @@ export function PatientFilePage({ patientId }: { patientId: string }) {
               <ChevronDown className="pf-profile__chevron" size={17} />
             </div>
             <div className="pf-header__actions">
-              <button className="pf-header__icon pf-header__icon--notification" aria-label="اعلان‌ها">
-                <Bell size={25} strokeWidth={1.7} />
-                <span>۳</span>
-              </button>
-              <span className="pf-header__divider" />
               <button className="pf-header__icon" aria-label="تقویم"><CalendarDays size={25} strokeWidth={1.7} /></button>
             </div>
           </header>

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Archive,
-  Bell,
   CalendarDays,
   ChevronDown,
   ChevronLeft,
@@ -16,8 +15,8 @@ import {
   Menu,
   MessageCircleQuestion,
   Search,
-  Settings,
   Stethoscope,
+  UserCog,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -77,7 +76,7 @@ const navItems = [
   { label: 'بیماران', href: '/dashboard/patients', icon: UsersRound },
   { label: 'درخواست اطلاعات تکمیلی', href: '/dashboard/info-requests', icon: MessageCircleQuestion },
   { label: 'آرشیو گزارش‌ها', href: '/dashboard/report-archive', icon: Archive, active: true },
-  { label: 'پروفایل تخصصی', href: '/dashboard/doctor-profile', icon: Settings },
+  { label: 'پروفایل تخصصی', href: '/dashboard/doctor-profile', icon: UserCog },
 ];
 
 const statusLabels: Record<string, string> = {
@@ -187,11 +186,6 @@ export function ReportArchivePage() {
               <ChevronDown className="report-archive-profile__chevron" size={17} />
             </div>
             <div className="report-archive-header__actions">
-              <button className="report-archive-header__icon report-archive-header__icon--notification" aria-label="اعلان‌ها">
-                <Bell size={25} strokeWidth={1.7} />
-                <span>۳</span>
-              </button>
-              <span className="report-archive-header__divider" />
               <button className="report-archive-header__icon" aria-label="تقویم"><CalendarDays size={25} strokeWidth={1.7} /></button>
             </div>
           </header>

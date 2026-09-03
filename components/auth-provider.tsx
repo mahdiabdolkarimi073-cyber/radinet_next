@@ -8,7 +8,7 @@ const TOKEN_KEY = 'radinet_auth_token';
 type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  signIn: (email: string, password: string) => Promise<{ ok: boolean; error?: string; role?: string }>;
   signUp: (fullName: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   signOut: () => void;
 };
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.ok && data.token) {
       writeToken(data.token);
       setUser(data.user);
-      return { ok: true };
+      return { ok: true, role: (data.user as AuthUser).role };
     }
     return { ok: false, error: data.error ?? 'ورود ناموفق بود' };
   }, []);
@@ -87,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     writeToken(null);
     setUser(null);
+    if (typeof window !== 'undefined') window.location.href = '/auth';
   }, []);
 
   return (

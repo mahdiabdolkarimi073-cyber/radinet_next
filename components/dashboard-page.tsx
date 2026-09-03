@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import {
-  Bell,
+  Archive,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
@@ -14,8 +14,9 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  Settings,
+  MessageCircleQuestion,
   Stethoscope,
+  UserCog,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -46,8 +47,9 @@ const navItems = [
   { label: 'درخواست‌های ارجاعی', href: '/dashboard/referrals', icon: ClipboardList },
   { label: 'گزارش‌ها', href: '/dashboard/reports', icon: FileText },
   { label: 'بیماران', href: '/dashboard/patients', icon: UsersRound },
-  { label: 'اعلان‌ها', href: '/dashboard/notifications', icon: Bell },
-  { label: 'تنظیمات', href: '/dashboard/settings', icon: Settings },
+  { label: 'درخواست اطلاعات تکمیلی', href: '/dashboard/info-requests', icon: MessageCircleQuestion },
+  { label: 'آرشیو گزارش‌ها', href: '/dashboard/report-archive', icon: Archive },
+  { label: 'پروفایل تخصصی', href: '/dashboard/doctor-profile', icon: UserCog },
 ];
 
 const quickActions = [
@@ -139,11 +141,6 @@ export function DashboardPage() {
               <ChevronDown className="dash-profile__chevron" size={17} />
             </div>
             <div className="dash-header__actions">
-              <button className="dash-header__icon dash-header__icon--notification" aria-label="اعلان‌ها">
-                <Bell size={25} strokeWidth={1.7} />
-                <span>۳</span>
-              </button>
-              <span className="dash-header__divider" />
               <button className="dash-header__icon" aria-label="تقویم"><CalendarDays size={25} strokeWidth={1.7} /></button>
             </div>
           </header>
@@ -174,21 +171,26 @@ export function DashboardPage() {
             <section className="dash-bottom">
               <div className="dash-card dash-card--notifications">
                 <div className="dash-card__head">
-                  <h2>اعلان‌های جدید</h2>
-                  <Bell size={23} strokeWidth={1.7} />
+                  <h2>دسترسی سریع به بخش‌ها</h2>
+                  <ClipboardList size={23} strokeWidth={1.7} />
                 </div>
                 <ul className="dash-notif-list">
-                  {(data?.notifications ?? []).slice(0, 3).map((notification) => (
-                    <li key={notification.id} className="dash-notif">
-                      <span className="dash-notif__dot" style={{ background: statusColors[notification.status] }} />
-                      <div className="dash-notif__body"><strong>{notification.title}</strong><span>{notification.description}</span></div>
-                      <time>{relativeTime(notification.createdAt)}</time>
-                    </li>
-                  ))}
-                  {!data && !error && <li className="dash-notif dash-notif--empty">در حال بارگذاری اعلان‌ها…</li>}
-                  {data && data.notifications.length === 0 && <li className="dash-notif dash-notif--empty">اعلان جدیدی وجود ندارد.</li>}
+                  <li className="dash-notif">
+                    <span className="dash-notif__dot" style={{ background: '#1456C3' }} />
+                    <div className="dash-notif__body"><strong>درخواست اطلاعات تکمیلی</strong><span>ارسال درخواست مدارک یا اطلاعات بیشتر از بیمار</span></div>
+                    <a href="/dashboard/info-requests" style={{ color: '#1456C3', fontSize: '14px' }}>مشاهده</a>
+                  </li>
+                  <li className="dash-notif">
+                    <span className="dash-notif__dot" style={{ background: '#168A68' }} />
+                    <div className="dash-notif__body"><strong>آرشیو گزارش‌ها</strong><span>مشاهده و جستجوی تمامی گزارش‌های ثبت‌شده</span></div>
+                    <a href="/dashboard/report-archive" style={{ color: '#168A68', fontSize: '14px' }}>مشاهده</a>
+                  </li>
+                  <li className="dash-notif">
+                    <span className="dash-notif__dot" style={{ background: '#C9973E' }} />
+                    <div className="dash-notif__body"><strong>پروفایل تخصصی</strong><span>ویرایش اطلاعات شخصی، تخصص‌ها و رزومه</span></div>
+                    <a href="/dashboard/doctor-profile" style={{ color: '#C9973E', fontSize: '14px' }}>مشاهده</a>
+                  </li>
                 </ul>
-                <a href="/dashboard/notifications" className="dash-card__link">مشاهده همه اعلان‌ها <ChevronLeft size={19} /></a>
               </div>
 
               <div className="dash-card dash-card--quick">

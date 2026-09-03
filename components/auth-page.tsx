@@ -57,7 +57,7 @@ export function AuthPage() {
         if (!result.ok) {
           setError(result.error ?? 'ورود ناموفق بود');
         } else {
-          router.push('/');
+          router.push(result.role === 'admin' ? '/admin' : '/dashboard');
         }
       } else {
         const result = await signUp(fullName.trim() || 'کاربر', email.trim(), password);
@@ -67,7 +67,7 @@ export function AuthPage() {
           setSuccess('ثبت‌نام موفق بود! اکنون وارد شده‌اید.');
           setFullName('');
           setConfirmPassword('');
-          router.push('/');
+          router.push('/dashboard');
         }
       }
     } catch (err) {
