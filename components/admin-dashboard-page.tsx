@@ -54,13 +54,12 @@ type AdminData = {
 };
 
 const navItems = [
-  { label: 'داشبورد', icon: LayoutDashboard, active: true },
-  { label: 'کاربران', icon: Users },
-  { label: 'درخواست‌ها', icon: FileText },
-  { label: 'سفارش‌ها', icon: ShoppingCart },
-  { label: 'محصولات', icon: Package },
-  { label: 'گزارش‌ها', icon: Archive },
-  { label: 'تنظیمات', icon: BarChart3 },
+  { label: 'داشبورد', href: '/admin', icon: LayoutDashboard, active: true },
+  { label: 'کاربران', href: '/admin/users', icon: Users },
+  { label: 'پزشکان', href: '/admin/doctors', icon: Stethoscope },
+  { label: 'درخواست‌ها', href: '/admin', icon: FileText },
+  { label: 'سفارش‌ها', href: '/admin', icon: ShoppingCart },
+  { label: 'گزارش‌ها', href: '/admin', icon: Archive },
 ];
 
 const statusColors: Record<string, string> = {
@@ -157,10 +156,10 @@ export function AdminDashboardPage() {
 
           <nav className="admin-nav">
             {navItems.map((item) => (
-              <button key={item.label} className={`admin-nav__item ${item.active ? 'is-active' : ''}`}>
+              <a key={item.label} href={item.href} className={`admin-nav__item ${item.active ? 'is-active' : ''}`}>
                 <item.icon size={22} strokeWidth={1.7} />
                 <span>{item.label}</span>
-              </button>
+              </a>
             ))}
           </nav>
 
