@@ -2,13 +2,20 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Activity, LayoutDashboard, LogOut, User as UserIcon, UserCircle } from 'lucide-react';
+import { Activity, LayoutDashboard, LogOut, User as UserIcon, UserCircle, Package, Stethoscope, FileText, CreditCard, Bell, MessageSquare, Star } from 'lucide-react';
 import { useAuth } from '@/components/auth-provider';
 import { useEffect } from 'react';
 
 const links = [
   { href: '/user-panel', label: 'داشبورد', icon: LayoutDashboard },
   { href: '/user-panel/profile', label: 'پروفایل من', icon: UserCircle },
+  { href: '/user-panel/orders', label: 'سفارش‌های فروشگاه', icon: Package },
+  { href: '/user-panel/telereports', label: 'درخواست‌های تله‌ریپورت', icon: Stethoscope },
+  { href: '/user-panel/medical-reports', label: 'گزارش‌های پزشکی', icon: FileText },
+  { href: '/user-panel/transactions', label: 'تراکنش‌ها و پرداخت‌ها', icon: CreditCard },
+  { href: '/user-panel/notifications', label: 'اعلان‌ها', icon: Bell },
+  { href: '/user-panel/tickets', label: 'تیکت‌های پشتیبانی', icon: MessageSquare },
+  { href: '/user-panel/reviews', label: 'نظرات و بازخورد', icon: Star },
 ];
 
 export function UserPanelShell({ children }: { children: React.ReactNode }) {
@@ -38,6 +45,13 @@ export function UserPanelShell({ children }: { children: React.ReactNode }) {
 }
 
 export function UpStatusBadge({ value }: { value: string }) {
-  const labels: Record<string, string> = { pending: 'در انتظار', processing: 'در حال پردازش', shipped: 'ارسال شده', delivered: 'تحویل شده', cancelled: 'لغو شده', new: 'جدید', open: 'باز', closed: 'بسته', completed: 'تکمیل شده' };
+  const labels: Record<string, string> = {
+    pending: 'در انتظار', processing: 'در حال پردازش', shipped: 'ارسال شده', delivered: 'تحویل شده', cancelled: 'لغو شده',
+    new: 'جدید', open: 'باز', closed: 'بسته', completed: 'تکمیل شده',
+    paid: 'پرداخت شده', unpaid: 'پرداخت نشده', refunded: 'بازگشت‌داده شده',
+    in_progress: 'در حال انجام', draft: 'پیش‌نویس', signed: 'امضا شده',
+    approved: 'تایید شده', rejected: 'رد شده', resolved: 'حل شده',
+    low: 'کم', medium: 'متوسط', high: 'زیاد', urgent: 'فوری',
+  };
   return <span className={`up-badge up-badge--${value}`}>{labels[value] ?? value}</span>;
 }
