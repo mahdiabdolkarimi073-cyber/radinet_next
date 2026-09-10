@@ -58,6 +58,8 @@ export function AuthPage() {
           setError(result.error ?? 'ورود ناموفق بود');
         } else if (result.role === 'admin') {
           window.location.href = '/admin';
+        } else if (result.role === 'ORG_ADMIN' || result.role === 'ORG_STAFF') {
+          window.location.href = '/org';
         } else {
           window.location.href = '/dashboard';
         }
