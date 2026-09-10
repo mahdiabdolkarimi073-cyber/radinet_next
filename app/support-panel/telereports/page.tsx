@@ -1,0 +1,10 @@
+'use client';
+
+import Link from 'next/link';
+import { Activity, ArrowLeft } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { PageTitle, StatusBadge } from '@/components/support-panel/support-shell';
+import { supportGet } from '@/lib/support-api';
+
+type Report = { id: string; requestNumber: string; patientFirstName: string; patientLastName: string; imagingType: string; imagingArea: string; status: string; createdAt: string };
+export default function TelereportsPage() { const [rows, setRows] = useState<Report[]>([]); const [status, setStatus] = useState('all'); useEffect(() => { supportGet<Report[]>(`/support/telereports${status === 'all' ? '' : `?status=${status}`}`).then(setRows).catch(() => setRows([])); }, [status]); return <section className="support-page"><PageTitle eyebrow="ماژول تله‌ریپورت" title="مدیریت درخواست‌ها" description="هماهنگی درخواست‌های تصویربرداری و پیگیری مراحل آن‌ها." /><div className="support-card"><div className="support-filters"><select className="support-select" value={status} onChange={(e) => setStatus(e.target.value)}><option value="all">همه وضعیت‌ها</option><option value="pending">در انتظار</option><option value="coordinating">در حال هماهنگی</option><option value="scheduled">زمان‌بندی شده</option><option value="completed">تکمیل شده</option><option value="cancelled">لغو شده</option></select></div><div className="support-table-wrap"><table className="support-table"><thead><tr><th>شماره درخواست</th><th>بیمار</th><th>نوع تصویربرداری</th><th>وضعیت</th><th>تاریخ</th><th>عملیات</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td>{row.requestNumber}</td><td>{row.patientFirstName} {row.patientLastName}</td><td>{row.imagingType} / {row.imagingArea}</td><td><StatusBadge value={row.status} /></td><td>{new Date(row.createdAt).toLocaleDateString('fa-IR')}</td><td><Link href={`/support-panel/telereports/${row.id}`} className="support-button secondary"><ArrowLeft size={15} /> جزئیات</Link></td></tr>)}</tbody></table>{!rows.length && <div className="support-empty"><Activity size={30} /> درخواستی یافت نشد</div>}</div></div></section>; }
