@@ -107,16 +107,30 @@ export default function HomePage({ data }: HomePageProps) {
         <div className="panel news-panel">
           <div className="section-heading">
             <div><span className="eyebrow">دانستنی‌های رادینت</span><h2>آخرین مقالات و اخبار</h2></div>
-            <a href="#news">مشاهده همه <ArrowLeft size={16} /></a>
+            <a href="/articles">مشاهده همه <ArrowLeft size={16} /></a>
           </div>
           <div className="news-list" id="news">
-            {data.news.map((item) => (
-              <article className="news-item" key={item.title}>
-                <img src={item.image_url} alt="" />
-                <div><h3>{item.title}</h3><time>{item.date_label}</time></div>
-                <ArrowLeft size={18} />
-              </article>
-            ))}
+            {data.news && data.news.length > 0 ? (
+              data.news.map((item) => (
+                <a
+                  href={`/articles/${item.slug || item.id}`}
+                  className="news-item"
+                  key={item.title}
+                >
+                  <img src={item.image_url} alt={item.title} />
+                  <div>
+                    <h3>{item.title}</h3>
+                    {item.summary && <p className="news-summary">{item.summary}</p>}
+                    <time>{item.date_label}</time>
+                  </div>
+                  <ArrowLeft size={18} />
+                </a>
+              ))
+            ) : (
+              <p style={{ color: '#94a3b8', fontSize: '14px', margin: '20px 0' }}>
+                در حال حاضر مقاله‌ای منتشر نشده است.
+              </p>
+            )}
           </div>
         </div>
         <div className="panel stats-panel">

@@ -5,7 +5,8 @@ import { SiteFooter } from '@/components/site-footer';
 import { getContactData } from '@/lib/contact-repository';
 import { fallbackData } from '@/lib/home-data';
 
-export const revalidate = 60;
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function ContactRoute() {
   const [data, footer] = await Promise.all([getContactData(), Promise.resolve(fallbackData.footer)]);

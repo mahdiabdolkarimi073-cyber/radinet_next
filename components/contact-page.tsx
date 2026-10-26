@@ -37,9 +37,14 @@ export function ContactPage({ data, footer }: ContactPageProps) {
     }
   }
 
-  const mapSrc = page?.latitude && page?.longitude
-    ? `https://maps.google.com/maps?q=${page.latitude},${page.longitude}&z=15&output=embed`
-    : null;
+  const lat = page?.latitude != null ? Number(page.latitude) : null;
+  const lon = page?.longitude != null ? Number(page.longitude) : null;
+  const delta = 0.007;
+  const mapSrc = page?.map_url
+    ? page.map_url
+    : lat != null && lon != null
+      ? `https://www.openstreetmap.org/export/embed.html?bbox=${(lon - delta).toFixed(5)}%2C${(lat - delta).toFixed(5)}%2C${(lon + delta).toFixed(5)}%2C${(lat + delta).toFixed(5)}&layer=mapnik&marker=${lat.toFixed(5)}%2C${lon.toFixed(5)}`
+      : null;
 
   return (
     <div className="contact-screen">

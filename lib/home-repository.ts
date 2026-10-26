@@ -51,17 +51,47 @@ function createApiRepository(): HomeRepository {
     },
 
     async getStats() {
-      return fetchTable<HomeStat>(
-        'home_stats',
-        'is_published=eq.true&order=display_order.asc',
-      );
+      try {
+        const { getRealDatabaseStats } = await import('@/lib/articles');
+        const stats = await getRealDatabaseStats();
+        return [
+          { label: 'تعداد درخواست‌ها', value: stats.requests.toLocaleString('fa-IR'), icon_key: 'activity' },
+          { label: 'پزشکان', value: stats.doctors.toLocaleString('fa-IR'), icon_key: 'users' },
+          { label: 'مراکز طرف قرارداد', value: stats.centers.toLocaleString('fa-IR'), icon_key: 'building' },
+          { label: 'کاربران فعال', value: stats.activeUsers.toLocaleString('fa-IR'), icon_key: 'user-check' },
+        ];
+      } catch {
+        return [
+          { label: 'تعداد درخواست‌ها', value: '۰', icon_key: 'activity' },
+          { label: 'پزشکان', value: '۰', icon_key: 'users' },
+          { label: 'مراکز طرف قرارداد', value: '۰', icon_key: 'building' },
+          { label: 'کاربران فعال', value: '۰', icon_key: 'user-check' },
+        ];
+      }
     },
 
     async getNews() {
-      return fetchTable<HomeNews>(
-        'home_news',
-        'is_published=eq.true&order=display_order.asc&limit=2',
-      );
+      try {
+        const { getPublishedArticles, toShamsiDate } = await import('@/lib/articles');
+        const articles = await getPublishedArticles(4);
+        if (articles.length > 0) {
+          return articles.map((art) => ({
+            id: art.id,
+            title: art.title,
+            slug: art.slug,
+            summary: art.summary,
+            content: art.content,
+            date_label: toShamsiDate(art.publishedAt || art.createdAt),
+            image_url: art.imageUrl,
+            category: art.category,
+            author: art.author,
+            published_at: art.publishedAt,
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching articles from db:', err);
+      }
+      return [];
     },
 
     async getFooter() {

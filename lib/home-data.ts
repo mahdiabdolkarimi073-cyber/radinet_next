@@ -22,9 +22,16 @@ export type HomeStat = {
 };
 
 export type HomeNews = {
+  id?: string;
   title: string;
+  slug?: string;
+  summary?: string;
+  content?: string;
   date_label: string;
   image_url: string;
+  category?: string;
+  author?: string;
+  published_at?: string;
 };
 
 export type FooterSettings = {
@@ -83,10 +90,10 @@ export const fallbackData: HomeData = {
     },
   ],
   stats: [
-    { label: 'تعداد درخواست‌ها', value: '۳۴,۷۸۹', icon_key: 'activity' },
-    { label: 'پزشکان', value: '۲,۳۴۵', icon_key: 'users' },
-    { label: 'مراکز طرف قرارداد', value: '۵۶۷', icon_key: 'building' },
-    { label: 'کاربران فعال', value: '۱۲,۴۵۶', icon_key: 'user-check' },
+    { label: 'تعداد درخواست‌ها', value: '۰', icon_key: 'activity' },
+    { label: 'پزشکان', value: '۰', icon_key: 'users' },
+    { label: 'مراکز طرف قرارداد', value: '۰', icon_key: 'building' },
+    { label: 'کاربران فعال', value: '۰', icon_key: 'user-check' },
   ],
   news: [
     {

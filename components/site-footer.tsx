@@ -32,7 +32,7 @@ export function SiteFooter({ footer }: SiteFooterProps) {
           <h3>دسترسی سریع</h3>
           <a href="/">خانه</a>
           <a href="/about">درباره ما</a>
-          <a href="/#news">مقالات</a>
+          <a href="/articles">مقالات</a>
           <a href="/contact">پشتیبانی</a>
           <a href="/legal/terms">قوانین</a>
         </div>

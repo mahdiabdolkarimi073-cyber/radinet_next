@@ -6,6 +6,7 @@ import {
   Package,
   ShoppingCart,
   FileText,
+  PhoneCall,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -24,6 +25,9 @@ export const adminNavItems: NavItem[] = [
   { label: 'محصولات فروشگاه', href: '/admin/shop-products', icon: Package },
   { label: 'سفارش‌های فروشگاه', href: '/admin/shop-orders', icon: ShoppingCart },
   { label: 'درخواست‌های تله‌ریپورت', href: '/admin/tele-reports', icon: FileText },
+  { label: 'مدیریت مقالات', href: '/admin/articles', icon: FileText },
+  { label: 'مدیریت درباره ما', href: '/admin/about', icon: Building2 },
+  { label: 'مدیریت تماس با ما', href: '/admin/contact', icon: PhoneCall },
 ];
 
 export function formatDate(value: string | null): string {
