@@ -440,6 +440,8 @@
 .admin-role-badge.is-admin { background: #fdeaea; color: #d94b55; }
 .admin-role-badge.is-doctor { background: #e8f7f1; color: #168a68; }
 .admin-role-badge.is-user { background: #eaf2ff; color: #1456c3; }
+.admin-role-badge.is-support { background: #f3e8ff; color: #9333ea; }
+.admin-role-badge.is-org { background: #e0f2fe; color: #0284c7; }
 
 .admin-status-badge {
   display: inline-flex; align-items: center;

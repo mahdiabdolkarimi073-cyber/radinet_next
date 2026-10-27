@@ -246,7 +246,22 @@ export function AdminDiscountsPage() {
                     {!isLoading && data?.items.map((item) => (
                       <tr key={item.id}>
                         <td data-label="کد"><strong>{item.code}</strong></td>
-                        <td data-label="توضیحات">{item.description || '—'}</td>
+                        <td data-label="توضیحات">
+                          <div>
+                            <span>{item.description || '—'}</span>
+                            <div style={{ marginTop: '3px' }}>
+                              {item.targetUserId ? (
+                                <span style={{ background: '#eaf2ff', color: '#1456c3', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
+                                  اختصاصی کاربر ({item.targetUserId.slice(0, 8)}…)
+                                </span>
+                              ) : (
+                                <span style={{ background: '#f1f5f9', color: '#64748b', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>
+                                  عمومی (همه کاربران)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
                         <td data-label="نوع">
                           <span className={`admin-role-badge ${typeClasses[item.type] ?? 'is-user'}`}>
                             {typeLabels[item.type] ?? item.type}

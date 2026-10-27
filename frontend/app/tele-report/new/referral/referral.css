@@ -1,0 +1,208 @@
+/* ── Referral Path Selection Page ── */
+.referral-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 30px 0 0;
+}
+
+.referral-page__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+  text-align: center;
+  margin: 0 0 30px;
+}
+
+/* ── Cards Grid ── */
+.referral-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* ── Card ── */
+.referral-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 30px;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  user-select: none;
+}
+
+.referral-card:hover {
+  border-color: #2563eb;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.1);
+}
+
+/* ── Selected Card ── */
+.referral-card.is-selected {
+  background: #eff6ff;
+  border: 2px solid #1e40af;
+}
+
+/* ── Disabled Card ── */
+.referral-card.is-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.referral-card.is-disabled:hover {
+  border-color: #e5e7eb;
+  box-shadow: none;
+}
+
+/* ── Help Button ── */
+.referral-card__help {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: transparent;
+  color: #9ca3af;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.referral-card.is-selected .referral-card__help {
+  background: #1e40af;
+  color: #ffffff;
+}
+
+.referral-card__help:hover {
+  color: #2563eb;
+}
+
+.referral-card.is-selected .referral-card__help:hover {
+  color: #ffffff;
+}
+
+/* ── Tooltip ── */
+.referral-card__tooltip {
+  position: absolute;
+  top: 42px;
+  left: 12px;
+  width: 220px;
+  background: #1f2937;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 10px 14px;
+  border-radius: 8px;
+  z-index: 10;
+  text-align: right;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Icon ── */
+.referral-card__icon {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  color: #2563eb;
+  margin-bottom: 16px;
+  transition: color 0.25s ease;
+}
+
+.referral-card.is-selected .referral-card__icon {
+  color: #1e40af;
+}
+
+/* ── Title ── */
+.referral-card__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+/* ── Description ── */
+.referral-card__desc {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 22px;
+  margin: 0;
+  flex: 1;
+}
+
+.referral-card__desc.is-active {
+  color: #10b981;
+  font-weight: 500;
+}
+
+/* ── Badge ── */
+.referral-card__badge {
+  margin-top: 10px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  background: #f3f4f6;
+  border-radius: 6px;
+  padding: 4px 12px;
+}
+
+/* ── Link ── */
+.referral-card__link {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #2563eb;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.referral-card__link:hover {
+  text-decoration: underline;
+}
+
+/* ── Actions ── */
+.referral-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 30px;
+  padding: 0 4px;
+}
+
+.referral-continue-btn {
+  width: 200px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .referral-cards {
+    grid-template-columns: 1fr;
+  }
+  .referral-card {
+    width: 100%;
+    height: auto;
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 640px) {
+  .referral-page__title {
+    font-size: 16px;
+  }
+  .referral-card {
+    padding: 24px 20px;
+  }
+  .referral-continue-btn {
+    width: 100%;
+  }
+}

@@ -9,6 +9,8 @@ import {
   PhoneCall,
   FileCheck,
   Headphones,
+  Bell,
+  Settings,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -24,14 +26,16 @@ export const adminNavItems: NavItem[] = [
   { label: 'پزشکان', href: '/admin/doctors', icon: Stethoscope },
   { label: 'مراکز تصویربرداری', href: '/admin/imaging-centers', icon: Building2 },
   { label: 'سازمان‌ها', href: '/admin/organizations', icon: Building2 },
-  { label: 'محصولات فروشگاه', href: '/admin/shop-products', icon: Package },
   { label: 'سفارش‌های فروشگاه', href: '/admin/shop-orders', icon: ShoppingCart },
+  { label: 'محصولات فروشگاه', href: '/admin/shop-products', icon: Package },
   { label: 'درخواست‌های تله‌ریپورت', href: '/admin/tele-reports', icon: FileText },
+  { label: 'مدیریت پشتیبانی', href: '/admin/support', icon: Headphones },
+  { label: 'اعلان‌ها', href: '/admin/notifications', icon: Bell },
   { label: 'مدیریت مقالات', href: '/admin/articles', icon: FileText },
   { label: 'مدیریت درباره ما', href: '/admin/about', icon: Building2 },
   { label: 'مدیریت تماس با ما', href: '/admin/contact', icon: PhoneCall },
   { label: 'قوانین و مقررات', href: '/admin/legal', icon: FileCheck },
-  { label: 'مدیریت پشتیبانی', href: '/admin/support', icon: Headphones },
+  { label: 'تنظیمات سامانه', href: '/admin/settings', icon: Settings },
 ];
 
 export function formatDate(value: string | null): string {

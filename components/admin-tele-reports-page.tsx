@@ -475,7 +475,15 @@ export function AdminTeleReportsPage() {
       </div>
 
       {detailData && (
-        <RequestDetailModal data={detailData} loading={detailLoading} onClose={() => setDetailData(null)} />
+        <RequestDetailModal
+          data={detailData}
+          loading={detailLoading}
+          onClose={() => setDetailData(null)}
+          onRefresh={() => {
+            void loadRequests();
+            void loadRequestDetail(detailData.id);
+          }}
+        />
       )}
       {assignRequest && (
         <AssignDoctorModal request={assignRequest} doctors={doctors} onClose={() => setAssignRequest(null)} onSaved={() => { setAssignRequest(null); void loadRequests(); }} />
@@ -484,48 +492,178 @@ export function AdminTeleReportsPage() {
   );
 }
 
-function RequestDetailModal({ data, loading, onClose }: { data: RequestItem | null; loading: boolean; onClose: () => void }) {
+function RequestDetailModal({
+  data,
+  loading,
+  onClose,
+  onRefresh,
+}: {
+  data: any;
+  loading: boolean;
+  onClose: () => void;
+  onRefresh?: () => void;
+}) {
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(data?.status ?? 'new');
+  const [aiStatusMsg, setAiStatusMsg] = useState('');
+  const [actionError, setActionError] = useState('');
+
   if (loading || !data) return null;
+
+  async function handleStatusChange(newStatus: string) {
+    setUpdatingStatus(true);
+    setActionError('');
+    try {
+      const token = window.localStorage.getItem('radinet_auth_token');
+      const res = await fetch(`/api/admin/tele-reports/${data.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error('تغییر وضعیت ناموفق بود.');
+      setCurrentStatus(newStatus);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'خطایی رخ داد.');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  }
+
+  async function handleVerifyAi(approved: boolean) {
+    setUpdatingStatus(true);
+    setActionError('');
+    try {
+      const token = window.localStorage.getItem('radinet_auth_token');
+      const res = await fetch(`/api/admin/tele-reports/${data.id}/ai-verify`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ approved }),
+      });
+      if (!res.ok) throw new Error('عملیات هوش مصنوعی ناموفق بود.');
+      const result = await res.json();
+      setAiStatusMsg(result.message ?? (approved ? 'تحلیل AI تأیید شد.' : 'تحلیل AI رد شد.'));
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'خطایی رخ داد.');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  }
 
   return (
     <div className="admin-modal-overlay" onClick={onClose}>
       <div className="admin-modal admin-modal--wide" onClick={(e) => e.stopPropagation()}>
         <div className="admin-modal__head">
-          <h3>جزئیات درخواست {data.requestNumber}</h3>
+          <h3>جزئیات پرونده و گزارش تله‌ریپورت: {data.requestNumber}</h3>
           <button onClick={onClose}><X size={20} /></button>
         </div>
         <div className="admin-modal__body">
+          {actionError && <div style={{ color: '#dc2626', background: '#fef2f2', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', marginBottom: '10px' }}>{actionError}</div>}
+          {aiStatusMsg && <div style={{ color: '#166534', background: '#f0fdf4', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', marginBottom: '10px' }}>{aiStatusMsg}</div>}
+
           <div className="admin-detail-section">
-            <h4>اطلاعات بیمار</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+              <h4>اطلاعات بیمار و آزمون</h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>تغییر وضعیت:</span>
+                <select
+                  value={currentStatus}
+                  onChange={(e) => void handleStatusChange(e.target.value)}
+                  disabled={updatingStatus}
+                  style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                >
+                  <option value="new">جدید</option>
+                  <option value="assigned">اختصاص‌یافته</option>
+                  <option value="in_progress">در حال انجام</option>
+                  <option value="completed">تکمیل‌شده</option>
+                  <option value="cancelled">لغوشده</option>
+                </select>
+              </div>
+            </div>
             <div className="admin-detail-grid">
-              <div><span>نام</span><strong>{data.patientFirstName} {data.patientLastName}</strong></div>
+              <div><span>نام بیمار</span><strong>{data.patientFirstName} {data.patientLastName}</strong></div>
               <div><span>تلفن</span><strong>{data.phone}</strong></div>
               <div><span>کد ملی</span><strong>{data.nationalId ?? '—'}</strong></div>
-              <div><span>شهر</span><strong>{data.city || '—'}</strong></div>
+              <div><span>شهر / کشور</span><strong>{data.city || '—'} ({data.country || 'IR'})</strong></div>
               <div><span>نوع تصویربرداری</span><strong>{imagingTypeLabels[data.imagingType] ?? data.imagingType}</strong></div>
-              <div><span>تاریخ</span><strong>{formatDate(data.createdAt)}</strong></div>
+              <div><span>ناحیه آناتومیک</span><strong>{data.imagingArea || 'عمومی'}</strong></div>
+              <div><span>تاریخ ثبت</span><strong>{formatDate(data.createdAt)}</strong></div>
+              <div><span>وضعیت فعلی</span><strong>{statusLabels[currentStatus] ?? currentStatus}</strong></div>
             </div>
           </div>
 
-          <div className="admin-detail-section">
-            <h4>وضعیت</h4>
-            <div className="admin-detail-grid">
-              <div><span>وضعیت</span><strong>{statusLabels[data.status] ?? data.status}</strong></div>
-              <div><span>پیوست‌ها</span><strong>{data.attachments.length.toLocaleString('fa-IR')}</strong></div>
-              <div><span>گزارش‌ها</span><strong>{data.reports.length.toLocaleString('fa-IR')}</strong></div>
-            </div>
-          </div>
-
-          {data.attachments.length > 0 && (
+          {(data.clinicalHistory || data.symptoms) && (
             <div className="admin-detail-section">
-              <h4>پیوست‌ها</h4>
+              <h4>شرح حال بالینی و علائم</h4>
+              {data.clinicalHistory && <p style={{ fontSize: '13px', color: '#334155', marginBottom: '4px' }}><strong>شرح حال:</strong> {data.clinicalHistory}</p>}
+              {data.symptoms && <p style={{ fontSize: '13px', color: '#334155' }}><strong>علائم بالینی:</strong> {data.symptoms}</p>}
+            </div>
+          )}
+
+          {(data.pacsUrl || data.cloudUrl) && (
+            <div className="admin-detail-section">
+              <h4>دسترسی به تصاویر پزشکی (PACS / Cloud)</h4>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {data.pacsUrl && (
+                  <a href={data.pacsUrl} target="_blank" rel="noopener noreferrer" style={{ background: '#1456C3', color: '#fff', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', textDecoration: 'none' }}>
+                    مشاهده در PACS
+                  </a>
+                )}
+                {data.cloudUrl && (
+                  <a href={data.cloudUrl} target="_blank" rel="noopener noreferrer" style={{ background: '#0891b2', color: '#fff', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', textDecoration: 'none' }}>
+                    لینک فضای ابری تصویر
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* تحلیل و تأیید هوش مصنوعی */}
+          <div className="admin-detail-section" style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h4 style={{ margin: 0, marginBottom: '4px' }}>تأیید و نظارت بر تحلیل هوش مصنوعی (AI)</h4>
+                <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>بررسی و تأیید الگوریتم‌های تشخیصی برای گزارش این بیمار</p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => void handleVerifyAi(true)}
+                  disabled={updatingStatus}
+                  style={{ background: '#168A68', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                >
+                  ✓ تأیید تحلیل AI
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleVerifyAi(false)}
+                  disabled={updatingStatus}
+                  style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                >
+                  ✕ رد تحلیل AI
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* پیوست‌ها */}
+          {data.attachments && data.attachments.length > 0 && (
+            <div className="admin-detail-section">
+              <h4>فایل‌های پیوست ({data.attachments.length.toLocaleString('fa-IR')})</h4>
               <ul className="admin-detail-list">
-                {data.attachments.map((a) => (
+                {data.attachments.map((a: any) => (
                   <li key={a.id}>
                     <span className="admin-detail-list__dot" style={{ background: '#1456c3' }} />
                     <div>
                       <strong>{a.originalName}</strong>
-                      <span>{(a.size / 1024).toFixed(1)} کیلوبایت</span>
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>{a.mimeType} · {(a.size / 1024).toFixed(1)} کیلوبایت</span>
                     </div>
                   </li>
                 ))}
@@ -533,27 +671,54 @@ function RequestDetailModal({ data, loading, onClose }: { data: RequestItem | nu
             </div>
           )}
 
-          {data.reports.length > 0 && (
-            <div className="admin-detail-section">
-              <h4>گزارش‌ها</h4>
-              <ul className="admin-detail-list">
-                {data.reports.map((r) => (
-                  <li key={r.id}>
-                    <span className="admin-detail-list__dot" style={{ background: r.signed ? '#168A68' : '#C9973E' }} />
-                    <div>
-                      <strong>{r.author?.fullName ?? '—'}</strong>
-                      <span>{r.signed ? 'امضاشده' : 'پیش‌نویس'}</span>
+          {/* گزارش‌های رادیولوژی */}
+          <div className="admin-detail-section">
+            <h4>گزارش‌های پزشکی پزشک متخصص ({data.reports?.length?.toLocaleString('fa-IR') ?? '۰'})</h4>
+            {data.reports && data.reports.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {data.reports.map((r: any) => (
+                  <div key={r.id} style={{ border: '1px solid #e2e8f0', padding: '12px', borderRadius: '8px', background: '#fff' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <strong>پزشک: {r.author?.fullName ?? 'تخصیص‌یافته'}</strong>
+                      <span style={{
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        background: r.signed ? '#e8f7f1' : '#fff6e5',
+                        color: r.signed ? '#168A68' : '#C9973E',
+                        fontWeight: 600
+                      }}>
+                        {r.signed ? 'امضاشده (نهایی)' : r.status === 'draft' ? 'پیش‌نویس پزشک' : r.status}
+                      </span>
                     </div>
-                  </li>
+                    {r.findings && (
+                      <div style={{ marginBottom: '6px', fontSize: '13px' }}>
+                        <span style={{ fontWeight: 600, color: '#475569', display: 'block' }}>یافته‌ها (Findings):</span>
+                        <p style={{ margin: '2px 0', color: '#1e293b' }}>{r.findings}</p>
+                      </div>
+                    )}
+                    {r.conclusion && (
+                      <div style={{ fontSize: '13px' }}>
+                        <span style={{ fontWeight: 600, color: '#475569', display: 'block' }}>نتیجه‌گیری (Conclusion):</span>
+                        <p style={{ margin: '2px 0', color: '#1e293b' }}>{r.conclusion}</p>
+                      </div>
+                    )}
+                    {!r.findings && !r.conclusion && (
+                      <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>پزشک هنوز متن گزارش را ثبت نکرده است.</p>
+                    )}
+                  </div>
                 ))}
-              </ul>
-            </div>
-          )}
+              </div>
+            ) : (
+              <p style={{ color: '#64748b', fontSize: '13px' }}>هیچ گزارشی برای این پرونده ثبت نشده است. می‌توانید با دکمه «تخصیص پزشک»، یک رادیولوژیست را برای گزارش‌دهی انتخاب نمایید.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
 
 function AssignDoctorModal({ request, doctors, onClose, onSaved }: { request: RequestItem; doctors: DoctorItem[]; onClose: () => void; onSaved: () => void }) {
   const [doctorId, setDoctorId] = useState('');

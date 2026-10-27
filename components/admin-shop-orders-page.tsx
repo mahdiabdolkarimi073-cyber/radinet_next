@@ -568,11 +568,14 @@ function EditStatusModal({ order, onClose, onSaved }: { order: OrderItem; onClos
             <span>یادداشت</span>
             <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="یادداشت اختیاری" />
           </label>
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '10px 12px', borderRadius: '8px', fontSize: '12px', color: '#166534' }}>
+            <span>✓ با ذخیره تغییرات، پیامک و اعلان درون‌برنامه‌ای به‌صورت خودکار برای مشتری ({order.customerPhone || 'شماره ثبت‌نشده'}) ثبت و ارسال خواهد شد.</span>
+          </div>
           {error && <div className="admin-modal__error">{error}</div>}
           <div className="admin-modal__actions">
             <button type="button" onClick={onClose} className="admin-modal__cancel">انصراف</button>
             <button type="submit" disabled={saving} className="admin-modal__save">
-              {saving ? 'در حال ذخیره…' : 'ذخیره تغییرات'}
+              {saving ? 'در حال ذخیره…' : 'ذخیره و ارسال اعلان'}
             </button>
           </div>
         </form>

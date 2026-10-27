@@ -18,3 +18,26 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'اتصال به سرور برقرار نیست.' }, { status: 503 });
   }
 }
+
+export async function PATCH(req: Request) {
+  try {
+    const authorization = req.headers.get('authorization');
+    const { pathname } = new URL(req.url);
+    const id = pathname.split('/').pop();
+    const body = await req.json();
+
+    const response = await fetch(`${backendUrl}/admin/tele-reports/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authorization ? { Authorization: authorization } : {}),
+      },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+    });
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch {
+    return NextResponse.json({ error: 'اتصال به سرور برقرار نیست.' }, { status: 503 });
+  }
+}

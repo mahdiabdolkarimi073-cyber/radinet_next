@@ -631,28 +631,211 @@ function EditOrgModal({ org, onClose, onSaved }: { org: OrgItem; onClose: () => 
   );
 }
 
-function OrgDetailModal({ data, loading, onClose }: { data: { organization: OrgItem; contracts: any[] } | null; loading: boolean; onClose: () => void }) {
+function OrgDetailModal({
+  data,
+  loading,
+  onClose,
+  onRefresh,
+}: {
+  data: { organization: OrgItem; contracts: any[] } | null;
+  loading: boolean;
+  onClose: () => void;
+  onRefresh?: () => void;
+}) {
+  const [orgUsers, setOrgUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [assignUserId, setAssignUserId] = useState('');
+  const [assignRole, setAssignRole] = useState('ORG_STAFF');
+  const [assignError, setAssignError] = useState('');
+  const [assigning, setAssigning] = useState(false);
+
+  // Contracts state
+  const [showAddContract, setShowAddContract] = useState(false);
+  const [contractNumber, setContractNumber] = useState('');
+  const [contractTitle, setContractTitle] = useState('');
+  const [contractType, setContractType] = useState('service');
+  const [contractStatus, setContractStatus] = useState('active');
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState('');
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [creditLimit, setCreditLimit] = useState(0);
+  const [terms, setTerms] = useState('');
+  const [savingContract, setSavingContract] = useState(false);
+  const [contractError, setContractError] = useState('');
+  const [localContracts, setLocalContracts] = useState<any[]>(data?.contracts ?? []);
+  const [requestsReport, setRequestsReport] = useState<any>(null);
+  const [loadingReport, setLoadingReport] = useState(false);
+
+  const orgId = data?.organization.id;
+
+  const loadRequestsReport = useCallback(async () => {
+    if (!orgId) return;
+    setLoadingReport(true);
+    try {
+      const token = window.localStorage.getItem('radinet_auth_token');
+      const res = await fetch(`/api/admin/organizations/${orgId}/requests-report`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const report = await res.json();
+        setRequestsReport(report);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingReport(false);
+    }
+  }, [orgId]);
+
+  const loadOrgUsers = useCallback(async () => {
+    if (!orgId) return;
+    setLoadingUsers(true);
+    try {
+      const token = window.localStorage.getItem('radinet_auth_token');
+      const res = await fetch(`/api/admin/organizations/${orgId}/users`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const users = await res.json();
+        setOrgUsers(users);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [orgId]);
+
+  useEffect(() => {
+    void loadOrgUsers();
+    void loadRequestsReport();
+    if (data?.contracts) setLocalContracts(data.contracts);
+  }, [loadOrgUsers, loadRequestsReport, data?.contracts]);
+
+  async function handleAssignUser(e: React.FormEvent) {
+    e.preventDefault();
+    if (!assignUserId.trim() || !orgId) return;
+    setAssigning(true);
+    setAssignError('');
+    try {
+      const token = window.localStorage.getItem('radinet_auth_token');
+      const res = await fetch(`/api/admin/organizations/${orgId}/users/${assignUserId.trim()}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ role: assignRole }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? 'اتصال کاربر به سازمان ناموفق بود.');
+      }
+      setAssignUserId('');
+      void loadOrgUsers();
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      setAssignError(err instanceof Error ? err.message : 'خطایی رخ داد.');
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  async function handleRemoveUser(userId: string) {
+    if (!confirm('آیا از قطع ارتباط این کاربر با سازمان اطمینان دارید؟') || !orgId) return;
+    try {
+      const token = window.localStorage.getItem('radinet_auth_token');
+      const res = await fetch(`/api/admin/organizations/${orgId}/users/${userId}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        void loadOrgUsers();
+        if (onRefresh) onRefresh();
+      }
+    } catch {
+      alert('قطع ارتباط کاربر ناموفق بود.');
+    }
+  }
+
+  async function handleCreateContract(e: React.FormEvent) {
+    e.preventDefault();
+    if (!orgId) return;
+    setSavingContract(true);
+    setContractError('');
+    try {
+      const token = window.localStorage.getItem('radinet_auth_token');
+      const res = await fetch(`/api/admin/organizations/${orgId}/contracts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          organizationId: orgId,
+          contractNumber,
+          title: contractTitle,
+          type: contractType,
+          status: contractStatus,
+          startDate,
+          endDate: endDate || undefined,
+          discountPercent: Number(discountPercent),
+          creditLimit: creditLimit ? Number(creditLimit) : undefined,
+          terms,
+        }),
+      });
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.error ?? 'ثبت قرارداد ناموفق بود.');
+      setLocalContracts((curr) => [resData, ...curr]);
+      setShowAddContract(false);
+      setContractNumber('');
+      setContractTitle('');
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      setContractError(err instanceof Error ? err.message : 'خطایی رخ داد.');
+    } finally {
+      setSavingContract(false);
+    }
+  }
+
+  async function handleDeleteContract(contractId: string) {
+    if (!confirm('آیا از حذف این قرارداد مطمئن هستید؟') || !orgId) return;
+    try {
+      const token = window.localStorage.getItem('radinet_auth_token');
+      const res = await fetch(`/api/admin/organizations/${orgId}/contracts/${contractId}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        setLocalContracts((curr) => curr.filter((c) => c.id !== contractId));
+        if (onRefresh) onRefresh();
+      }
+    } catch {
+      alert('حذف قرارداد ناموفق بود.');
+    }
+  }
+
   if (loading || !data) return null;
-  const { organization: org, contracts } = data;
+  const { organization: org } = data;
 
   return (
     <div className="admin-modal-overlay" onClick={onClose}>
       <div className="admin-modal admin-modal--wide" onClick={(e) => e.stopPropagation()}>
         <div className="admin-modal__head">
-          <h3>جزئیات سازمان</h3>
-          <button onClick={onClose}><X size={20} /></button>
+          <h3>جزئیات و پرونده سازمان: {org.name}</h3>
+          <button onClick={onClose} aria-label="بستن"><X size={20} /></button>
         </div>
         <div className="admin-modal__body">
           <div className="admin-detail-section">
-            <h4>اطلاعات سازمان</h4>
+            <h4>اطلاعات ثبتی و حقوقی</h4>
             <div className="admin-detail-grid">
-              <div><span>نام</span><strong>{org.name}</strong></div>
-              <div><span>نامک</span><strong>{org.slug}</strong></div>
-              <div><span>نوع</span><strong>{typeLabels[org.type] ?? org.type}</strong></div>
-              <div><span>وضعیت</span><strong>{org.isActive ? 'فعال' : 'غیرفعال'}</strong></div>
+              <div><span>نام سازمان</span><strong>{org.name}</strong></div>
+              <div><span>شناسه (slug)</span><strong>{org.slug}</strong></div>
+              <div><span>نوع سازمان</span><strong>{typeLabels[org.type] ?? org.type}</strong></div>
+              <div><span>وضعیت فعالیت</span><strong>{org.isActive ? 'فعال' : 'غیرفعال'}</strong></div>
               <div><span>شهر</span><strong>{org.city || '—'}</strong></div>
               <div><span>استان</span><strong>{org.province || '—'}</strong></div>
-              <div><span>تلفن</span><strong>{org.phone || '—'}</strong></div>
+              <div><span>تلفن تماس</span><strong>{org.phone || '—'}</strong></div>
               <div><span>ایمیل</span><strong>{org.email || '—'}</strong></div>
               <div><span>شناسه ملی</span><strong>{org.nationalId ?? '—'}</strong></div>
               <div><span>کد اقتصادی</span><strong>{org.economicCode ?? '—'}</strong></div>
@@ -662,39 +845,265 @@ function OrgDetailModal({ data, loading, onClose }: { data: { organization: OrgI
           </div>
 
           <div className="admin-detail-section">
-            <h4>اطلاعات تماس</h4>
+            <h4>اطلاعات رابط و تماس</h4>
             <div className="admin-detail-grid">
               <div><span>شخص رابط</span><strong>{org.contactPerson ?? '—'}</strong></div>
               <div><span>تلفن رابط</span><strong>{org.contactPhone ?? '—'}</strong></div>
               <div><span>ایمیل رابط</span><strong>{org.contactEmail ?? '—'}</strong></div>
-              <div><span>نشانی</span><strong>{org.address || '—'}</strong></div>
+              <div><span>نشانی دقیق</span><strong>{org.address || '—'}</strong></div>
             </div>
           </div>
 
           {org.description && (
             <div className="admin-detail-section">
-              <h4>توضیحات</h4>
+              <h4>توضیحات و زمینه فعالیت</h4>
               <p className="admin-detail-text">{org.description}</p>
             </div>
           )}
 
+          {/* قراردادهای سازمان */}
           <div className="admin-detail-section">
-            <h4>قراردادها ({(org._count?.contracts ?? 0).toLocaleString('fa-IR')})</h4>
-            {contracts.length > 0 ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h4>قراردادها ({localContracts.length.toLocaleString('fa-IR')})</h4>
+              <button
+                type="button"
+                onClick={() => setShowAddContract(!showAddContract)}
+                style={{
+                  background: '#1456C3',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                }}
+              >
+                {showAddContract ? 'انصراف' : '+ ثبت قرارداد جدید'}
+              </button>
+            </div>
+
+            {showAddContract && (
+              <form onSubmit={handleCreateContract} style={{ background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginBottom: '10px' }}>
+                  <label>
+                    <span style={{ fontSize: '12px', display: 'block', marginBottom: '3px' }}>شماره قرارداد:</span>
+                    <input value={contractNumber} onChange={(e) => setContractNumber(e.target.value)} required placeholder="مثال: CTR-1403-01" style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                  </label>
+                  <label>
+                    <span style={{ fontSize: '12px', display: 'block', marginBottom: '3px' }}>عنوان قرارداد:</span>
+                    <input value={contractTitle} onChange={(e) => setContractTitle(e.target.value)} required placeholder="قرارداد خدمات تله‌ریپورت" style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                  </label>
+                  <label>
+                    <span style={{ fontSize: '12px', display: 'block', marginBottom: '3px' }}>تاریخ شروع:</span>
+                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                  </label>
+                  <label>
+                    <span style={{ fontSize: '12px', display: 'block', marginBottom: '3px' }}>تاریخ پایان (اختیاری):</span>
+                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                  </label>
+                  <label>
+                    <span style={{ fontSize: '12px', display: 'block', marginBottom: '3px' }}>تخفیف (%):</span>
+                    <input type="number" min={0} max={100} value={discountPercent} onChange={(e) => setDiscountPercent(Number(e.target.value))} style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                  </label>
+                  <label>
+                    <span style={{ fontSize: '12px', display: 'block', marginBottom: '3px' }}>سقف اعتبار (تومان):</span>
+                    <input type="number" min={0} value={creditLimit} onChange={(e) => setCreditLimit(Number(e.target.value))} style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                  </label>
+                </div>
+                <label style={{ display: 'block', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '12px', display: 'block', marginBottom: '3px' }}>شرایط و مفاد توافق:</span>
+                  <textarea rows={2} value={terms} onChange={(e) => setTerms(e.target.value)} placeholder="شرح توافقات و تعهدات طرفین..." style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                </label>
+                {contractError && <div style={{ color: '#dc2626', fontSize: '12px', marginBottom: '8px' }}>{contractError}</div>}
+                <button type="submit" disabled={savingContract} style={{ background: '#168A68', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                  {savingContract ? 'در حال ثبت…' : 'ذخیره و فعال‌سازی قرارداد'}
+                </button>
+              </form>
+            )}
+
+            {localContracts.length > 0 ? (
               <ul className="admin-detail-list">
-                {contracts.map((c) => (
-                  <li key={c.id}>
-                    <span className="admin-detail-list__dot" style={{ background: c.isActive ? '#168A68' : '#C9973E' }} />
+                {localContracts.map((c) => (
+                  <li key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <strong>{c.title ?? c.contractNumber ?? '—'}</strong>
-                      <span>{c.startDate ? formatDate(c.startDate) : '—'}{c.endDate ? ` تا ${formatDate(c.endDate)}` : ''}</span>
+                      <span className="admin-detail-list__dot" style={{ background: c.status === 'active' ? '#168A68' : '#C9973E' }} />
+                      <strong>{c.title} ({c.contractNumber})</strong>
+                      <span style={{ display: 'block', fontSize: '12px', color: '#64748b' }}>
+                        شروع: {formatDate(c.startDate)} · پایان: {c.endDate ? formatDate(c.endDate) : 'نامحدود'}
+                        {c.discountPercent ? ` · تخفیف: ${c.discountPercent}٪` : ''}
+                        {c.creditLimit ? ` · اعتبار: ${formatToman(Number(c.creditLimit))} تومان` : ''}
+                      </span>
                     </div>
-                    <time>{formatDate(c.createdAt)}</time>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteContract(c.id)}
+                      style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
+                    >
+                      حذف
+                    </button>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="admin-detail-text">قراردادی برای این سازمان ثبت نشده است.</p>
+              <p className="admin-detail-text">هیچ قراردادی برای این سازمان ثبت نشده است.</p>
+            )}
+          </div>
+
+          {/* کاربران زیرمجموعه سازمان */}
+          <div className="admin-detail-section">
+            <h4>کاربران و پرسنل منسوب به سازمان ({orgUsers.length.toLocaleString('fa-IR')})</h4>
+            <form onSubmit={handleAssignUser} style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'flex-end' }}>
+              <label style={{ flex: 1 }}>
+                <span style={{ fontSize: '13px', display: 'block', marginBottom: '4px', color: '#475569' }}>شناسه کاربر (User UUID) جهت انتساب به سازمان:</span>
+                <input
+                  value={assignUserId}
+                  onChange={(e) => setAssignUserId(e.target.value)}
+                  placeholder="مثال: f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+                />
+              </label>
+              <label>
+                <span style={{ fontSize: '13px', display: 'block', marginBottom: '4px', color: '#475569' }}>نقش سازمانی:</span>
+                <select value={assignRole} onChange={(e) => setAssignRole(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
+                  <option value="ORG_STAFF">پرسنل سازمان</option>
+                  <option value="ORG_ADMIN">مدیر سازمان</option>
+                </select>
+              </label>
+              <button
+                type="submit"
+                disabled={assigning || !assignUserId.trim()}
+                style={{
+                  background: '#1456C3',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '9px 18px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                }}
+              >
+                {assigning ? 'در حال ثبت…' : 'اتصال به سازمان'}
+              </button>
+            </form>
+            {assignError && <div style={{ color: '#dc2626', fontSize: '12px', marginBottom: '8px' }}>{assignError}</div>}
+
+            {loadingUsers ? (
+              <p style={{ color: '#64748b', fontSize: '13px' }}>در حال بارگذاری کاربران سازمان…</p>
+            ) : orgUsers.length > 0 ? (
+              <ul className="admin-detail-list">
+                {orgUsers.map((u) => (
+                  <li key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong>{u.fullName}</strong>
+                      <span style={{ display: 'block', color: '#64748b', fontSize: '12px' }}>{u.email} · نقش: {u.role === 'ORG_ADMIN' ? 'مدیر سازمان' : 'پرسنل'}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveUser(u.id)}
+                      style={{
+                        background: '#fef2f2',
+                        color: '#dc2626',
+                        border: '1px solid #fecaca',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                      }}
+                    >
+                      قطع ارتباط
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p style={{ color: '#64748b', fontSize: '13px' }}>هیچ کاربری به این سازمان متصل نشده است.</p>
+            )}
+          </div>
+
+          {/* گزارش تجمیعی درخواست‌های سازمان */}
+          <div className="admin-detail-section">
+            <h4>گزارش تجمیعی درخواست‌های تله‌ریپورت سازمان</h4>
+            {loadingReport ? (
+              <p style={{ color: '#64748b', fontSize: '13px' }}>در حال بارگذاری گزارش تجمیعی…</p>
+            ) : requestsReport ? (
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '14px' }}>
+                  <div style={{ background: '#f1f5fa', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
+                    <span style={{ fontSize: '12px', color: '#64748b', display: 'block' }}>کل درخواست‌ها</span>
+                    <strong style={{ fontSize: '18px', color: '#0f172a' }}>{requestsReport.summary.total.toLocaleString('fa-IR')}</strong>
+                  </div>
+                  <div style={{ background: '#e8f7f1', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
+                    <span style={{ fontSize: '12px', color: '#168A68', display: 'block' }}>تکمیل‌شده</span>
+                    <strong style={{ fontSize: '18px', color: '#168A68' }}>{requestsReport.summary.byStatus.completed.toLocaleString('fa-IR')}</strong>
+                  </div>
+                  <div style={{ background: '#eaf2ff', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
+                    <span style={{ fontSize: '12px', color: '#1456C3', display: 'block' }}>در حال انجام</span>
+                    <strong style={{ fontSize: '18px', color: '#1456C3' }}>{requestsReport.summary.byStatus.in_progress.toLocaleString('fa-IR')}</strong>
+                  </div>
+                  <div style={{ background: '#fff6e5', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
+                    <span style={{ fontSize: '12px', color: '#C9973E', display: 'block' }}>در انتظار و جدید</span>
+                    <strong style={{ fontSize: '18px', color: '#C9973E' }}>{(requestsReport.summary.byStatus.new + requestsReport.summary.byStatus.assigned).toLocaleString('fa-IR')}</strong>
+                  </div>
+                </div>
+
+                {Object.keys(requestsReport.summary.byImagingType || {}).length > 0 && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <span style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '6px' }}>تفکیک بر اساس نوع تصویربرداری:</span>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {Object.entries(requestsReport.summary.byImagingType).map(([type, count]) => (
+                        <span key={type} style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '3px 10px', borderRadius: '12px', fontSize: '12px' }}>
+                          <strong>{type}</strong>: {(count as number).toLocaleString('fa-IR')}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {requestsReport.requests.length > 0 ? (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse', textAlign: 'right' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>
+                          <th style={{ padding: '6px 8px' }}>شماره</th>
+                          <th style={{ padding: '6px 8px' }}>بیمار</th>
+                          <th style={{ padding: '6px 8px' }}>نوع</th>
+                          <th style={{ padding: '6px 8px' }}>وضعیت</th>
+                          <th style={{ padding: '6px 8px' }}>پزشک گزارش‌دهنده</th>
+                          <th style={{ padding: '6px 8px' }}>تاریخ ثبت</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {requestsReport.requests.slice(0, 10).map((req: any) => (
+                          <tr key={req.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '6px 8px', fontWeight: 600 }}>{req.requestNumber}</td>
+                            <td style={{ padding: '6px 8px' }}>{req.patientName}</td>
+                            <td style={{ padding: '6px 8px' }}>{req.imagingType}</td>
+                            <td style={{ padding: '6px 8px' }}>
+                              <span style={{
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                                background: req.status === 'completed' ? '#e8f7f1' : req.status === 'in_progress' ? '#eaf2ff' : '#fff6e5',
+                                color: req.status === 'completed' ? '#168A68' : req.status === 'in_progress' ? '#1456C3' : '#C9973E'
+                              }}>
+                                {req.status === 'completed' ? 'تکمیل‌شده' : req.status === 'in_progress' ? 'در حال انجام' : 'جدید'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '6px 8px' }}>{req.doctorName}</td>
+                            <td style={{ padding: '6px 8px', color: '#64748b' }}>{formatDate(req.createdAt)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p style={{ color: '#64748b', fontSize: '13px' }}>هنوز درخواستی توسط پرسنل این سازمان ثبت نشده است.</p>
+                )}
+              </div>
+            ) : (
+              <p style={{ color: '#64748b', fontSize: '13px' }}>اطلاعاتی در دسترس نیست.</p>
             )}
           </div>
         </div>
@@ -702,3 +1111,4 @@ function OrgDetailModal({ data, loading, onClose }: { data: { organization: OrgI
     </div>
   );
 }
+

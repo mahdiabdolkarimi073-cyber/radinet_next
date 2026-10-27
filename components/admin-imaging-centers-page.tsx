@@ -592,7 +592,90 @@ function EditCenterModal({ center, onClose, onSaved }: { center: CenterItem; onC
   );
 }
 
-function CenterDetailModal({ data, loading, onClose }: { data: { center: CenterItem; orders: any[]; requests: any[] } | null; loading: boolean; onClose: () => void }) {
+function CenterDetailModal({
+  data,
+  loading,
+  onClose,
+  onRefresh,
+}: {
+  data: { center: CenterItem; orders: any[]; requests: any[] } | null;
+  loading: boolean;
+  onClose: () => void;
+  onRefresh?: () => void;
+}) {
+  const [centerUsers, setCenterUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [assignUserId, setAssignUserId] = useState('');
+  const [assignError, setAssignError] = useState('');
+  const [assigning, setAssigning] = useState(false);
+
+  const centerId = data?.center.id;
+
+  const loadCenterUsers = useCallback(async () => {
+    if (!centerId) return;
+    setLoadingUsers(true);
+    try {
+      const token = window.localStorage.getItem('radinet_auth_token');
+      const res = await fetch(`/api/admin/imaging-centers/${centerId}/users`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const users = await res.json();
+        setCenterUsers(users);
+      }
+    } catch {
+      // silently handle
+    } finally {
+      setLoadingUsers(false);
+    }
+  }, [centerId]);
+
+  useEffect(() => {
+    void loadCenterUsers();
+  }, [loadCenterUsers]);
+
+  async function handleAssignUser(e: React.FormEvent) {
+    e.preventDefault();
+    if (!assignUserId.trim() || !centerId) return;
+    setAssigning(true);
+    setAssignError('');
+    try {
+      const token = window.localStorage.getItem('radinet_auth_token');
+      const res = await fetch(`/api/admin/imaging-centers/${centerId}/users/${assignUserId.trim()}`, {
+        method: 'PATCH',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? 'انتساب کاربر به مرکز ناموفق بود.');
+      }
+      setAssignUserId('');
+      void loadCenterUsers();
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      setAssignError(err instanceof Error ? err.message : 'خطایی رخ داد.');
+    } finally {
+      setAssigning(false);
+    }
+  }
+
+  async function handleRemoveUser(userId: string) {
+    if (!confirm('آیا از قطع ارتباط این کاربر با مرکز تصویربرداری اطمینان دارید؟') || !centerId) return;
+    try {
+      const token = window.localStorage.getItem('radinet_auth_token');
+      const res = await fetch(`/api/admin/imaging-centers/${centerId}/users/${userId}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        void loadCenterUsers();
+        if (onRefresh) onRefresh();
+      }
+    } catch {
+      alert('قطع ارتباط کاربر ناموفق بود.');
+    }
+  }
+
   if (loading || !data) return null;
   const { center, orders, requests } = data;
 
@@ -600,42 +683,42 @@ function CenterDetailModal({ data, loading, onClose }: { data: { center: CenterI
     <div className="admin-modal-overlay" onClick={onClose}>
       <div className="admin-modal admin-modal--wide" onClick={(e) => e.stopPropagation()}>
         <div className="admin-modal__head">
-          <h3>جزئیات مرکز تصویربرداری</h3>
-          <button onClick={onClose}><X size={20} /></button>
+          <h3>جزئیات و پرونده مرکز: {center.name}</h3>
+          <button onClick={onClose} aria-label="بستن"><X size={20} /></button>
         </div>
         <div className="admin-modal__body">
           <div className="admin-detail-section">
-            <h4>اطلاعات مرکز</h4>
+            <h4>اطلاعات عمومی و مجوزها</h4>
             <div className="admin-detail-grid">
               <div><span>نام مرکز</span><strong>{center.name}</strong></div>
-              <div><span>نامک</span><strong>{center.slug}</strong></div>
+              <div><span>شناسه (slug)</span><strong>{center.slug}</strong></div>
               <div><span>شهر</span><strong>{center.city || '—'}</strong></div>
               <div><span>استان</span><strong>{center.province || '—'}</strong></div>
-              <div><span>تلفن</span><strong>{center.phone || '—'}</strong></div>
+              <div><span>تلفن تماس</span><strong>{center.phone || '—'}</strong></div>
               <div><span>ایمیل</span><strong>{center.email || '—'}</strong></div>
               <div><span>نشانی</span><strong>{center.address || '—'}</strong></div>
               <div><span>شماره پروانه</span><strong>{center.licenseNumber ?? '—'}</strong></div>
               <div><span>شخص مسئول</span><strong>{center.contactPerson ?? '—'}</strong></div>
               <div><span>تلفن مسئول</span><strong>{center.contactPhone ?? '—'}</strong></div>
-              <div><span>وضعیت</span><strong>{center.isActive ? 'فعال' : 'غیرفعال'}</strong></div>
+              <div><span>وضعیت فعالیت</span><strong>{center.isActive ? 'فعال' : 'غیرفعال'}</strong></div>
               <div><span>تاریخ ثبت</span><strong>{formatDate(center.createdAt)}</strong></div>
             </div>
           </div>
 
           {center.description && (
             <div className="admin-detail-section">
-              <h4>توضیحات</h4>
+              <h4>توضیحات مرکز</h4>
               <p>{center.description}</p>
             </div>
           )}
 
           <div className="admin-detail-section">
-            <h4>آمار</h4>
+            <h4>آمار عملکردی مرکز</h4>
             <div className="admin-detail-stats">
               <div className="admin-detail-stat">
                 <Building2 size={20} />
-                <strong>{(center._count?.users ?? 0).toLocaleString('fa-IR')}</strong>
-                <span>کاربران</span>
+                <strong>{centerUsers.length.toLocaleString('fa-IR')}</strong>
+                <span>کاربران منسوب</span>
               </div>
               <div className="admin-detail-stat">
                 <ShieldCheck size={20} />
@@ -655,16 +738,81 @@ function CenterDetailModal({ data, loading, onClose }: { data: { center: CenterI
             </div>
           </div>
 
+          {/* مدیریت کاربران زیرمجموعه مرکز */}
+          <div className="admin-detail-section">
+            <h4>کاربران و پرسنل زیرمجموعه مرکز ({centerUsers.length.toLocaleString('fa-IR')})</h4>
+            <form onSubmit={handleAssignUser} style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'flex-end' }}>
+              <label style={{ flex: 1 }}>
+                <span style={{ fontSize: '13px', display: 'block', marginBottom: '4px', color: '#475569' }}>شناسه کاربر (User UUID) جهت اتصال به مرکز:</span>
+                <input
+                  value={assignUserId}
+                  onChange={(e) => setAssignUserId(e.target.value)}
+                  placeholder="مثال: f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={assigning || !assignUserId.trim()}
+                style={{
+                  background: '#1456C3',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '9px 18px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                }}
+              >
+                {assigning ? 'در حال ثبت…' : 'اتصال کاربر به مرکز'}
+              </button>
+            </form>
+            {assignError && <div style={{ color: '#dc2626', fontSize: '12px', marginBottom: '8px' }}>{assignError}</div>}
+
+            {loadingUsers ? (
+              <p style={{ color: '#64748b', fontSize: '13px' }}>در حال بارگذاری کاربران مرکز…</p>
+            ) : centerUsers.length > 0 ? (
+              <ul className="admin-detail-list">
+                {centerUsers.map((u) => (
+                  <li key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong>{u.fullName}</strong>
+                      <span style={{ display: 'block', color: '#64748b', fontSize: '12px' }}>{u.email} · نقش: {u.role}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveUser(u.id)}
+                      style={{
+                        background: '#fef2f2',
+                        color: '#dc2626',
+                        border: '1px solid #fecaca',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                      }}
+                    >
+                      قطع ارتباط
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p style={{ color: '#64748b', fontSize: '13px' }}>هیچ کاربری به این مرکز متصل نشده است.</p>
+            )}
+          </div>
+
           {orders.length > 0 && (
             <div className="admin-detail-section">
-              <h4>سفارش‌های اخیر</h4>
+              <h4>سفارش‌های اخیر این مرکز</h4>
               <ul className="admin-detail-list">
                 {orders.map((o) => (
                   <li key={o.id}>
                     <span className="admin-detail-list__dot" style={{ background: '#168A68' }} />
                     <div>
-                      <strong>{o.orderNumber ?? '—'}</strong>
-                      <span>{o.status ?? ''}</span>
+                      <strong>سفارش {o.orderNumber ?? '—'}</strong>
+                      <span>مبلغ: {formatToman(Number(o.total))} تومان · وضعیت: {o.status ?? ''}</span>
                     </div>
                     <time>{formatDate(o.createdAt)}</time>
                   </li>
@@ -675,14 +823,14 @@ function CenterDetailModal({ data, loading, onClose }: { data: { center: CenterI
 
           {requests.length > 0 && (
             <div className="admin-detail-section">
-              <h4>درخواست‌های اخیر</h4>
+              <h4>درخواست‌های اخیر این مرکز</h4>
               <ul className="admin-detail-list">
                 {requests.map((r) => (
                   <li key={r.id}>
                     <span className="admin-detail-list__dot" style={{ background: '#C9973E' }} />
                     <div>
-                      <strong>{r.requestNumber ?? '—'}</strong>
-                      <span>{r.status ?? ''}</span>
+                      <strong>درخواست {r.requestNumber ?? '—'} ({r.imagingType})</strong>
+                      <span>بیمار: {r.patientFirstName} {r.patientLastName} · وضعیت: {r.status ?? ''}</span>
                     </div>
                     <time>{formatDate(r.createdAt)}</time>
                   </li>

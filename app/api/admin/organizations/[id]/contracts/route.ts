@@ -7,7 +7,7 @@ export async function GET(req: Request) {
   try {
     const authorization = req.headers.get('authorization');
     const parts = new URL(req.url).pathname.split('/');
-    const id = parts[parts.length - 3];
+    const id = parts[parts.indexOf('organizations') + 1];
     const response = await fetch(`${backendUrl}/admin/organizations/${id}/contracts`, {
       headers: authorization ? { Authorization: authorization } : {},
       cache: 'no-store',
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   try {
     const authorization = req.headers.get('authorization');
     const parts = new URL(req.url).pathname.split('/');
-    const id = parts[parts.length - 3];
+    const id = parts[parts.indexOf('organizations') + 1];
     const body = await req.json();
     const response = await fetch(`${backendUrl}/admin/organizations/${id}/contracts`, {
       method: 'POST',

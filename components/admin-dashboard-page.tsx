@@ -5,6 +5,7 @@ import {
   Activity,
   Archive,
   BarChart3,
+  Bell,
   Building2,
   CalendarDays,
   ChevronDown,
@@ -21,6 +22,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '@/components/auth-provider';
+import { adminNavItems } from '@/lib/admin-nav';
 
 type Stats = {
   users: number;
@@ -37,30 +39,35 @@ type Stats = {
 
 type ChartPoint = { label: string; orders: number; requests: number };
 
-type Activity = {
-  type: 'order' | 'request' | 'report' | 'user';
+type ActivityItem = {
+  type: 'order' | 'request' | 'report' | 'user' | 'notification';
   title: string;
   description: string;
   status: string;
   createdAt: string;
 };
 
-type AdminData = {
-  stats: Stats;
-  sales: { daily: { orders: number; requests: number }; monthly: { orders: number; requests: number }; yearly: { orders: number; requests: number } };
-  revenue: { shop: number; teleReport: number; total: number };
-  charts: { daily: ChartPoint[]; monthly: ChartPoint[]; yearly: ChartPoint[] };
-  activities: Activity[];
+type NotificationItem = {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  status: string;
+  createdAt: string;
 };
 
-const navItems = [
-  { label: 'داشبورد', href: '/admin', icon: LayoutDashboard, active: true },
-  { label: 'کاربران', href: '/admin/users', icon: Users },
-  { label: 'پزشکان', href: '/admin/doctors', icon: Stethoscope },
-  { label: 'درخواست‌ها', href: '/admin', icon: FileText },
-  { label: 'سفارش‌ها', href: '/admin', icon: ShoppingCart },
-  { label: 'گزارش‌ها', href: '/admin', icon: Archive },
-];
+type AdminData = {
+  stats: Stats;
+  sales: {
+    daily: { orders: number; requests: number };
+    monthly: { orders: number; requests: number };
+    yearly: { orders: number; requests: number };
+  };
+  revenue: { shop: number; teleReport: number; total: number };
+  charts: { daily: ChartPoint[]; monthly: ChartPoint[]; yearly: ChartPoint[] };
+  activities: ActivityItem[];
+  notifications?: NotificationItem[];
+};
 
 const statusColors: Record<string, string> = {
   new: '#C9973E',
@@ -74,20 +81,7 @@ const statusColors: Record<string, string> = {
   signed: '#168A68',
   paid: '#168A68',
   unpaid: '#D94B55',
-};
-
-const statusLabels: Record<string, string> = {
-  new: 'جدید',
-  pending: 'در انتظار',
-  in_progress: 'در حال بررسی',
-  reviewing: 'در حال بررسی',
-  completed: 'تکمیل‌شده',
-  referred: 'ارجاع‌شده',
-  rejected: 'ردشده',
-  draft: 'پیش‌نویس',
-  signed: 'امضاشده',
-  paid: 'پرداخت‌شده',
-  unpaid: 'پرداخت‌نشده',
+  sent: '#168A68',
 };
 
 function relativeTime(iso: string): string {
@@ -101,7 +95,7 @@ function relativeTime(iso: string): string {
 }
 
 function formatToman(n: number): string {
-  return n.toLocaleString('fa-IR');
+  return (n || 0).toLocaleString('fa-IR');
 }
 
 export function AdminDashboardPage() {
@@ -128,10 +122,12 @@ export function AdminDashboardPage() {
   const statCards = [
     { label: 'کاربران', value: data?.stats.users ?? 0, icon: Users, color: '#1456C3', bg: '#eaf2ff' },
     { label: 'پزشکان', value: data?.stats.doctors ?? 0, icon: Stethoscope, color: '#168A68', bg: '#e8f7f1' },
-    { label: 'مراکز', value: data?.stats.centers ?? 0, icon: Building2, color: '#C9973E', bg: '#fff6e5' },
-    { label: 'سفارش‌ها', value: data?.stats.orders ?? 0, icon: ShoppingCart, color: '#D94B55', bg: '#fdeaea' },
-    { label: 'درخواست‌ها', value: data?.stats.requests ?? 0, icon: FileText, color: '#5b3f8a', bg: '#f0eef6' },
-    { label: 'گزارش‌ها', value: data?.stats.reports ?? 0, icon: Archive, color: '#0b2a5b', bg: '#e8edf4' },
+    { label: 'مراکز تصویربرداری', value: data?.stats.centers ?? 0, icon: Building2, color: '#C9973E', bg: '#fff6e5' },
+    { label: 'سازمان‌ها', value: data?.stats.organizations ?? 0, icon: Building2, color: '#0b2a5b', bg: '#e8edf4' },
+    { label: 'سفارش‌های فروشگاه', value: data?.stats.orders ?? 0, icon: ShoppingCart, color: '#D94B55', bg: '#fdeaea' },
+    { label: 'درخواست‌های تله‌ریپورت', value: data?.stats.requests ?? 0, icon: FileText, color: '#5b3f8a', bg: '#f0eef6' },
+    { label: 'گزارش‌های تشخیصی', value: data?.stats.reports ?? 0, icon: Archive, color: '#2563eb', bg: '#eff6ff' },
+    { label: 'محصولات فروشگاه', value: data?.stats.products ?? 0, icon: Package, color: '#059669', bg: '#ecfdf5' },
   ];
 
   const chartData = data?.charts[chartTab] ?? [];
@@ -147,43 +143,60 @@ export function AdminDashboardPage() {
             </div>
             <div>
               <strong>رادینت</strong>
-              <span>پنل مدیریت</span>
+              <span>پنل مدیریت مرکزی</span>
             </div>
-            <button className="admin-sidebar__close" onClick={() => setSidebarOpen(false)} style={{ display: sidebarOpen ? 'grid' : 'none' }}>
+            <button
+              className="admin-sidebar__close"
+              onClick={() => setSidebarOpen(false)}
+              style={{ display: sidebarOpen ? 'grid' : 'none' }}
+              aria-label="بستن منو"
+            >
               <X size={22} />
             </button>
           </div>
 
           <nav className="admin-nav">
-            {navItems.map((item) => (
-              <a key={item.label} href={item.href} className={`admin-nav__item ${item.active ? 'is-active' : ''}`}>
-                <item.icon size={22} strokeWidth={1.7} />
-                <span>{item.label}</span>
-              </a>
-            ))}
+            {adminNavItems.map((item) => {
+              const isActive = item.href === '/admin';
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className={`admin-nav__item ${isActive ? 'is-active' : ''}`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon size={20} strokeWidth={1.7} />
+                  <span>{item.label}</span>
+                </a>
+              );
+            })}
           </nav>
 
           <button className="admin-nav__logout" onClick={() => void signOut()}>
-            <LogOut size={22} strokeWidth={1.7} />
-            <span>خروج</span>
+            <LogOut size={20} strokeWidth={1.7} />
+            <span>خروج از حساب</span>
           </button>
         </aside>
 
         {sidebarOpen && (
-          <div className="admin-overlay" onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(7,29,65,.42)' }} />
+          <div
+            className="admin-overlay"
+            onClick={() => setSidebarOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(7,29,65,.42)' }}
+          />
         )}
 
         <div className="admin-content">
           <header className="admin-header">
             <div className="admin-header__title">
               <LayoutDashboard size={26} strokeWidth={1.7} />
-              <span>پنل مدیریت</span>
+              <span>داشبورد مدیریت مرکزی</span>
             </div>
             <div className="admin-profile">
               <div className="admin-avatar">{user?.fullName?.charAt(0) ?? 'A'}</div>
               <div className="admin-user">
                 <strong>{user?.fullName ?? 'مدیر سیستم'}</strong>
-                <span>مدیر کل</span>
+                <span>مدیر ارشد سامانه</span>
               </div>
               <ChevronDown className="admin-profile__chevron" size={17} />
             </div>
@@ -196,19 +209,22 @@ export function AdminDashboardPage() {
             <section className="admin-welcome">
               <div className="admin-welcome__text">
                 <h1>سلام {user?.fullName ?? 'ادمین'}، خوش آمدید</h1>
-                <p>به پنل مدیریت رادینت وارد شده‌اید. از اینجا می‌توانید آمار کلان، نمودار فروش، درآمد و فعالیت‌های اخیر را مشاهده کنید.</p>
+                <p>
+                  نمای کلی آمار واقعی سامانه رادینت، درآمد حاصل از فروشگاه و تله‌ریپورت، نمودارهای تحلیلی و وقایع جاری سیستم.
+                </p>
               </div>
             </section>
 
             {error && <div className="admin-error">{error}</div>}
 
+            {/* کارت‌های آمار کلان */}
             <section className="admin-stats-grid">
               {statCards.map((card) => (
                 <article className="admin-stat-card" key={card.label}>
                   <div className="admin-stat-card__top">
                     <span>{card.label}</span>
                     <div className="admin-stat-card__icon" style={{ background: card.bg, color: card.color }}>
-                      <card.icon size={26} strokeWidth={1.8} />
+                      <card.icon size={24} strokeWidth={1.8} />
                     </div>
                   </div>
                   <strong>{formatToman(card.value)}</strong>
@@ -216,13 +232,20 @@ export function AdminDashboardPage() {
               ))}
             </section>
 
+            {/* ردیف نمودار و درآمد */}
             <section className="admin-charts-row">
               <div className="admin-card admin-chart-card">
                 <div className="admin-card__head">
-                  <h2><BarChart3 size={22} strokeWidth={1.7} /> نمودار فروش</h2>
+                  <h2>
+                    <BarChart3 size={22} strokeWidth={1.7} /> نمودار فعالیت و فروش
+                  </h2>
                   <div className="admin-chart-tabs">
                     {(['daily', 'monthly', 'yearly'] as const).map((tab) => (
-                      <button key={tab} className={`admin-chart-tab ${chartTab === tab ? 'is-active' : ''}`} onClick={() => setChartTab(tab)}>
+                      <button
+                        key={tab}
+                        className={`admin-chart-tab ${chartTab === tab ? 'is-active' : ''}`}
+                        onClick={() => setChartTab(tab)}
+                      >
                         {tab === 'daily' ? 'روزانه' : tab === 'monthly' ? 'ماهانه' : 'سالانه'}
                       </button>
                     ))}
@@ -230,26 +253,45 @@ export function AdminDashboardPage() {
                 </div>
                 <div className="admin-chart">
                   <div className="admin-chart__bars">
-                    {chartData.map((point, i) => (
-                      <div className="admin-chart__group" key={i}>
-                        <div className="admin-chart__bar-wrap">
-                          <div className="admin-chart__bar admin-chart__bar--orders" style={{ height: `${(point.orders / maxChartVal) * 100}%` }} title={`سفارش: ${point.orders}`} />
-                          <div className="admin-chart__bar admin-chart__bar--requests" style={{ height: `${(point.requests / maxChartVal) * 100}%` }} title={`درخواست: ${point.requests}`} />
+                    {chartData.length === 0 ? (
+                      <div className="admin-activity--empty">داده‌ای برای نمایش نمودار وجود ندارد.</div>
+                    ) : (
+                      chartData.map((point, i) => (
+                        <div className="admin-chart__group" key={i}>
+                          <div className="admin-chart__bar-wrap">
+                            <div
+                              className="admin-chart__bar admin-chart__bar--orders"
+                              style={{ height: `${point.orders > 0 ? Math.max((point.orders / maxChartVal) * 100, 6) : 0}%` }}
+                              title={`سفارش‌های فروشگاه: ${point.orders}`}
+                            />
+                            <div
+                              className="admin-chart__bar admin-chart__bar--requests"
+                              style={{ height: `${point.requests > 0 ? Math.max((point.requests / maxChartVal) * 100, 6) : 0}%` }}
+                              title={`درخواست‌های تله‌ریپورت: ${point.requests}`}
+                            />
+                          </div>
+                          <span className="admin-chart__label">{point.label}</span>
                         </div>
-                        <span className="admin-chart__label">{point.label}</span>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                   <div className="admin-chart__legend">
-                    <span><i style={{ background: '#5b3f8a' }} /> سفارش‌های فروشگاه</span>
-                    <span><i style={{ background: '#e2b35f' }} /> درخواست‌های تله‌ریپورت</span>
+                    <span>
+                      <i style={{ background: '#5b3f8a' }} /> سفارش‌های فروشگاه
+                    </span>
+                    <span>
+                      <i style={{ background: '#e2b35f' }} /> درخواست‌های تله‌ریپورت
+                    </span>
                   </div>
                 </div>
               </div>
 
+              {/* درآمد تفکیک‌شده */}
               <div className="admin-card admin-revenue-card">
                 <div className="admin-card__head">
-                  <h2><DollarSign size={22} strokeWidth={1.7} /> درآمد</h2>
+                  <h2>
+                    <DollarSign size={22} strokeWidth={1.7} /> درآمد واقعی سامانه
+                  </h2>
                   <TrendingUp size={22} strokeWidth={1.7} style={{ color: '#C9973E' }} />
                 </div>
                 <div className="admin-revenue-list">
@@ -258,7 +300,7 @@ export function AdminDashboardPage() {
                       <ShoppingCart size={22} strokeWidth={1.8} />
                     </div>
                     <div className="admin-revenue-item__body">
-                      <strong>فروشگاه</strong>
+                      <strong>فروشگاه رادینت</strong>
                       <span>{formatToman(data?.revenue.shop ?? 0)} تومان</span>
                     </div>
                   </div>
@@ -267,7 +309,7 @@ export function AdminDashboardPage() {
                       <Stethoscope size={22} strokeWidth={1.8} />
                     </div>
                     <div className="admin-revenue-item__body">
-                      <strong>تله‌ریپورت</strong>
+                      <strong>خدمات تله‌ریپورت</strong>
                       <span>{formatToman(data?.revenue.teleReport ?? 0)} تومان</span>
                     </div>
                   </div>
@@ -276,7 +318,7 @@ export function AdminDashboardPage() {
                       <DollarSign size={22} strokeWidth={1.8} />
                     </div>
                     <div className="admin-revenue-item__body">
-                      <strong>درآمد کل</strong>
+                      <strong>درآمد کل محقق‌شده</strong>
                       <span>{formatToman(data?.revenue.total ?? 0)} تومان</span>
                     </div>
                   </div>
@@ -284,14 +326,17 @@ export function AdminDashboardPage() {
               </div>
             </section>
 
+            {/* ردیف فعالیت‌ها و اعلانات */}
             <section className="admin-activity-row">
               <div className="admin-card admin-activity-card">
                 <div className="admin-card__head">
-                  <h2><Activity size={22} strokeWidth={1.7} /> آخرین فعالیت‌ها</h2>
+                  <h2>
+                    <Activity size={22} strokeWidth={1.7} /> آخرین وقایع و فعالیت‌ها
+                  </h2>
                 </div>
                 <ul className="admin-activity-list">
-                  {data?.activities.length === 0 && (
-                    <li className="admin-activity--empty">فعالیتی ثبت نشده است.</li>
+                  {(!data?.activities || data.activities.length === 0) && (
+                    <li className="admin-activity--empty">هیچ فعالیتی ثبت نشده است.</li>
                   )}
                   {data?.activities.map((act, i) => (
                     <li className="admin-activity" key={i}>
@@ -306,9 +351,12 @@ export function AdminDashboardPage() {
                 </ul>
               </div>
 
+              {/* خلاصه سفارشات و اعلانات اخیر */}
               <div className="admin-card admin-sales-card">
                 <div className="admin-card__head">
-                  <h2><CalendarDays size={22} strokeWidth={1.7} /> خلاصه فروش</h2>
+                  <h2>
+                    <CalendarDays size={22} strokeWidth={1.7} /> خلاصه فروش و تراکنش‌ها
+                  </h2>
                 </div>
                 <div className="admin-sales-summary">
                   <div className="admin-sales-item">
@@ -336,6 +384,32 @@ export function AdminDashboardPage() {
                     <strong>{formatToman(data?.sales.yearly.requests ?? 0)}</strong>
                   </div>
                 </div>
+
+                {data?.notifications && data.notifications.length > 0 && (
+                  <div style={{ marginTop: '20px', borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <Bell size={18} style={{ color: '#1456C3' }} />
+                      <strong style={{ fontSize: '14px', color: '#071D41' }}>آخرین اعلانات سامانه</strong>
+                    </div>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {data.notifications.map((n) => (
+                        <li
+                          key={n.id}
+                          style={{
+                            background: '#f8fafc',
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            fontSize: '13px',
+                          }}
+                        >
+                          <div style={{ fontWeight: 600, color: '#0f172a' }}>{n.title}</div>
+                          <div style={{ color: '#64748b', marginTop: '2px' }}>{n.message}</div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </section>
           </main>

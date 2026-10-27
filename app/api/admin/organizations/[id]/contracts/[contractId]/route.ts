@@ -7,8 +7,8 @@ export async function PATCH(req: Request) {
   try {
     const authorization = req.headers.get('authorization');
     const parts = new URL(req.url).pathname.split('/');
-    const contractId = parts[parts.length - 1];
-    const id = parts[parts.length - 3];
+    const id = parts[parts.indexOf('organizations') + 1];
+    const contractId = parts[parts.indexOf('contracts') + 1];
     const body = await req.json();
     const response = await fetch(`${backendUrl}/admin/organizations/${id}/contracts/${contractId}`, {
       method: 'PATCH',
@@ -30,8 +30,8 @@ export async function DELETE(req: Request) {
   try {
     const authorization = req.headers.get('authorization');
     const parts = new URL(req.url).pathname.split('/');
-    const contractId = parts[parts.length - 1];
-    const id = parts[parts.length - 3];
+    const id = parts[parts.indexOf('organizations') + 1];
+    const contractId = parts[parts.indexOf('contracts') + 1];
     const response = await fetch(`${backendUrl}/admin/organizations/${id}/contracts/${contractId}`, {
       method: 'DELETE',
       headers: authorization ? { Authorization: authorization } : {},
