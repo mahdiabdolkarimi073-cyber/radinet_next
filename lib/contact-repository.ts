@@ -1,14 +1,18 @@
+// Client-safe contact repository - ZERO Node.js / fs dependencies
 import type { ContactData } from '@/lib/contact-data';
-import { getContactDataServer } from '@/lib/contact-storage';
+import { fallbackContactData } from '@/lib/contact-data';
 
 export async function getContactData(): Promise<ContactData> {
   try {
-    return await getContactDataServer();
+    const res = await fetch('/api/contact', { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
   } catch (err) {
-    console.error('Error getting contact data:', err);
-    const { fallbackContactData } = await import('@/lib/contact-data');
-    return fallbackContactData;
+    console.error('Error fetching contact data:', err);
   }
+  return fallbackContactData;
 }
 
 export async function submitContactMessage(input: {

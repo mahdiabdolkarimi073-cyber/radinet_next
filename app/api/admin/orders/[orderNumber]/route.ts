@@ -1,20 +1,25 @@
 import { NextResponse } from 'next/server';
+import { getShopOrderByNumberServer } from '@/lib/shop-storage';
 
-const backendUrl =
-  process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000/api';
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
-export async function GET(req: Request) {
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ orderNumber: string }> | { orderNumber: string } }
+) {
   try {
-    const authorization = req.headers.get('authorization');
-    const { pathname } = new URL(req.url);
-    const orderNumber = pathname.split('/').pop();
-    const response = await fetch(`${backendUrl}/admin/orders/${orderNumber}`, {
-      headers: authorization ? { Authorization: authorization } : {},
-      cache: 'no-store',
-    });
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch {
-    return NextResponse.json({ error: 'اتصال به سرور برقرار نیست.' }, { status: 503 });
+    const resolvedParams = await Promise.resolve(params);
+    const orderNumber = resolvedParams.orderNumber;
+    const order = await getShopOrderByNumberServer(orderNumber);
+
+    if (!order) {
+      return NextResponse.json({ error: 'سفارش یافت نشد.' }, { status: 404 });
+    }
+
+    return NextResponse.json(order);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'خطا در دریافت اطلاعات سفارش';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-export const SUPPORT_API = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000/api';
+export const SUPPORT_API = process.env.NEXT_PUBLIC_BACKEND_URL || '/api';
 
 function token(): string | null {
   return typeof window === 'undefined' ? null : window.localStorage.getItem('radinet_auth_token');

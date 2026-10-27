@@ -1,18 +1,15 @@
 import { NextResponse } from 'next/server';
+import { adminGetOrderStatsServer } from '@/lib/shop-storage';
 
-const backendUrl =
-  process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000/api';
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const authorization = req.headers.get('authorization');
-    const response = await fetch(`${backendUrl}/admin/orders/stats/summary`, {
-      headers: authorization ? { Authorization: authorization } : {},
-      cache: 'no-store',
-    });
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch {
-    return NextResponse.json({ error: 'اتصال به سرور برقرار نیست.' }, { status: 503 });
+    const stats = await adminGetOrderStatsServer();
+    return NextResponse.json(stats);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'خطا در دریافت آمار سفارش‌ها';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

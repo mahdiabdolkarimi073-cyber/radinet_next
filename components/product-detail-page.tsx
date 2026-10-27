@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { addToCart } from '@/lib/cart';
 
-const api = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000';
+const api = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 type Category = { id: string; name: string; slug: string } | null;
 
@@ -342,20 +342,40 @@ export function ProductDetailPage({ slug }: { slug: string }) {
                 {product.shortDescription && (
                   <p className="pd-description__short">{product.shortDescription}</p>
                 )}
-                {product.description ? (
-                  <p>{product.description}</p>
+                {product.description?.includes('<') ? (
+                  <div dangerouslySetInnerHTML={{ __html: product.description }} />
                 ) : (
-                  <p className="pd-tab-empty">توضیحاتی برای این محصول ثبت نشده است.</p>
+                  <p>{product.description || 'توضیحاتی برای این محصول ثبت نشده است.'}</p>
                 )}
               </div>
             )}
             {tab === 'specs' && (
               <div className="pd-specs">
-                {product.technicalSpecifications ? (
-                  <pre className="pd-specs__text">{product.technicalSpecifications}</pre>
-                ) : (
-                  <p className="pd-tab-empty">مشخصات فنی برای این محصول ثبت نشده است.</p>
-                )}
+                {(() => {
+                  if (!product.technicalSpecifications) {
+                    return <p className="pd-tab-empty">مشخصات فنی برای این محصول ثبت نشده است.</p>;
+                  }
+                  try {
+                    const parsed = JSON.parse(product.technicalSpecifications);
+                    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+                      return (
+                        <div style={{ overflowX: 'auto' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
+                            <tbody>
+                              {Object.entries(parsed).map(([key, val]) => (
+                                <tr key={key} style={{ borderBottom: '1px solid #E5EAF0' }}>
+                                  <td style={{ padding: '12px 16px', fontWeight: 600, color: '#092F5B', width: '35%', background: '#F8FAFC' }}>{key}</td>
+                                  <td style={{ padding: '12px 16px', color: '#334155' }}>{String(val)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    }
+                  } catch {}
+                  return <pre className="pd-specs__text">{product.technicalSpecifications}</pre>;
+                })()}
               </div>
             )}
             {tab === 'reviews' && (

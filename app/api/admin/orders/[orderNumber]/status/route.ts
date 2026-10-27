@@ -1,27 +1,27 @@
 import { NextResponse } from 'next/server';
+import { adminUpdateOrderStatusServer } from '@/lib/shop-storage';
 
-const backendUrl =
-  process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000/api';
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
-export async function PATCH(req: Request) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ orderNumber: string }> | { orderNumber: string } }
+) {
   try {
-    const authorization = req.headers.get('authorization');
-    const { pathname } = new URL(req.url);
-    const parts = pathname.split('/');
-    const orderNumber = parts[parts.length - 2];
+    const resolvedParams = await Promise.resolve(params);
+    const orderNumber = resolvedParams.orderNumber;
     const body = await req.json();
-    const response = await fetch(`${backendUrl}/admin/orders/${orderNumber}/status`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(authorization ? { Authorization: authorization } : {}),
-      },
-      body: JSON.stringify(body),
-      cache: 'no-store',
-    });
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch {
-    return NextResponse.json({ error: 'اتصال به سرور برقرار نیست.' }, { status: 503 });
+    const { status, trackingCode } = body || {};
+
+    if (!status) {
+      return NextResponse.json({ error: 'وضعیت سفارش مشخص نشده است.' }, { status: 400 });
+    }
+
+    const updated = await adminUpdateOrderStatusServer(orderNumber, status, trackingCode);
+    return NextResponse.json(updated);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'به‌روزرسانی وضعیت سفارش ناموفق بود.';
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, ChevronLeft, Film, Package, Boxes, Wrench, ImageIcon, Loader2, Menu, X } from 'lucide-react';
 
-const api = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000';
+const api = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 type Category = {
   id: string;

@@ -16,7 +16,7 @@ import {
   Truck,
 } from 'lucide-react';
 
-const api = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000';
+const api = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 type ProductRef = { imageUrl?: string; slug?: string };
 type OrderItem = { id: string; productName: string; quantity: number; unitPrice: string | number; lineTotal: string | number; product?: ProductRef };

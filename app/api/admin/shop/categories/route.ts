@@ -1,38 +1,15 @@
 import { NextResponse } from 'next/server';
+import { getShopCategoriesServer } from '@/lib/shop-storage';
 
-const backendUrl =
-  process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000/api';
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const authorization = req.headers.get('authorization');
-    const response = await fetch(`${backendUrl}/admin/shop/categories`, {
-      headers: authorization ? { Authorization: authorization } : {},
-      cache: 'no-store',
-    });
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch {
-    return NextResponse.json({ error: 'اتصال به سرور برقرار نیست.' }, { status: 503 });
-  }
-}
-
-export async function POST(req: Request) {
-  try {
-    const authorization = req.headers.get('authorization');
-    const body = await req.json();
-    const response = await fetch(`${backendUrl}/admin/shop/categories`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(authorization ? { Authorization: authorization } : {}),
-      },
-      body: JSON.stringify(body),
-      cache: 'no-store',
-    });
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch {
-    return NextResponse.json({ error: 'اتصال به سرور برقرار نیست.' }, { status: 503 });
+    const categories = await getShopCategoriesServer();
+    return NextResponse.json(categories);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'خطا در دریافت دسته‌بندی‌ها';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -15,9 +15,9 @@ import {
   Send,
   ShoppingBag,
 } from 'lucide-react';
-import { CartItem, readCart } from '@/lib/cart';
+import { CartItem, readCart, writeCart } from '@/lib/cart';
 
-const api = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000';
+const api = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 type CartConfig = { taxRate: number; shippingCost: number; freeShippingThreshold: number };
 type ShippingMethod = {
@@ -152,6 +152,9 @@ export function CheckoutPage() {
         throw new Error(data.message ?? 'ثبت سفارش ناموفق بود.');
       }
       const order = await response.json();
+      try {
+        writeCart([]);
+      } catch {}
       // simulate redirect to payment gateway
       if (paymentMethod === 'gateway') {
         setRedirectUrl(`/shop/checkout/success?order=${order.orderNumber}`);

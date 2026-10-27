@@ -7,6 +7,8 @@ import {
   ShoppingCart,
   FileText,
   PhoneCall,
+  FileCheck,
+  Headphones,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -28,6 +30,8 @@ export const adminNavItems: NavItem[] = [
   { label: 'مدیریت مقالات', href: '/admin/articles', icon: FileText },
   { label: 'مدیریت درباره ما', href: '/admin/about', icon: Building2 },
   { label: 'مدیریت تماس با ما', href: '/admin/contact', icon: PhoneCall },
+  { label: 'قوانین و مقررات', href: '/admin/legal', icon: FileCheck },
+  { label: 'مدیریت پشتیبانی', href: '/admin/support', icon: Headphones },
 ];
 
 export function formatDate(value: string | null): string {

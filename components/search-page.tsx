@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { addToCart } from '@/lib/cart';
 
-const api = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000';
+const api = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 type Category = { id: string; name: string; slug: string };
 

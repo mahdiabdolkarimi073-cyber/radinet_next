@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronLeft, Minus, Plus, Send, ShoppingBag, Trash2, X } from 'lucide-react';
 import { CartItem, cartCount, readCart, writeCart } from '@/lib/cart';
 
-const api = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000';
+const api = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 type CartConfig = { taxRate: number; shippingCost: number; freeShippingThreshold: number };
 type Discount = { type: string; value: number; description?: string };
