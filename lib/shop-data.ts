@@ -155,4 +155,5 @@ export type OrderStatsResponse = {
     cancelled: number;
   };
   revenue: number;
+  paidRevenue: number;
 };

@@ -22,24 +22,33 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/components/auth-provider';
 
+type OrderLineItem = {
+  id: string;
+  productId: string;
+  productName?: string;
+  quantity: number;
+  unitPrice?: number | string;
+  lineTotal?: number | string;
+  price?: number | string;
+  product?: { id: string; name: string; imageUrl: string } | null;
+};
+
 type OrderItem = {
   id: string;
   orderNumber: string;
   customerName: string;
   customerPhone: string;
   customerEmail: string;
-  total: number;
+  subtotal?: number | string;
+  shippingCost?: number | string;
+  discountTotal?: number | string;
+  tax?: number | string;
+  total: number | string;
   status: string;
   paymentStatus: string;
   trackingCode: string | null;
   createdAt: string;
-  items: {
-    id: string;
-    productId: string;
-    quantity: number;
-    price: number;
-    product: { id: string; name: string; imageUrl: string };
-  }[];
+  items: OrderLineItem[];
 };
 
 type OrderResponse = {
@@ -60,7 +69,8 @@ type OrderStats = {
     delivered: number;
     cancelled: number;
   };
-  paidRevenue: number;
+  paidRevenue?: number | string;
+  revenue?: number | string;
 };
 
 type FilterValues = {
@@ -117,8 +127,11 @@ function formatDate(value: string | null): string {
   return new Intl.DateTimeFormat('fa-IR', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
 }
 
-function formatToman(n: number): string {
-  return n.toLocaleString('fa-IR');
+function formatToman(n: number | string | null | undefined): string {
+  if (n === null || n === undefined || n === '') return '۰';
+  const num = typeof n === 'number' ? n : Number(n);
+  if (!Number.isFinite(num)) return '۰';
+  return num.toLocaleString('fa-IR');
 }
 
 export function AdminShopOrdersPage() {
@@ -274,35 +287,35 @@ export function AdminShopOrdersPage() {
                     <span>کل سفارش‌ها</span>
                     <div className="admin-stat-card__icon" style={{ background: '#eff4fb', color: '#1456c3' }}><ShoppingCart size={22} /></div>
                   </div>
-                  <strong>{stats.total.toLocaleString('fa-IR')}</strong>
+                  <strong>{(stats.total ?? 0).toLocaleString('fa-IR')}</strong>
                 </div>
                 <div className="admin-stat-card">
                   <div className="admin-stat-card__top">
                     <span>در انتظار</span>
                     <div className="admin-stat-card__icon" style={{ background: '#fef9ef', color: '#C9973E' }}><Package size={22} /></div>
                   </div>
-                  <strong>{stats.byStatus.pending.toLocaleString('fa-IR')}</strong>
+                  <strong>{(stats.byStatus?.pending ?? 0).toLocaleString('fa-IR')}</strong>
                 </div>
                 <div className="admin-stat-card">
                   <div className="admin-stat-card__top">
                     <span>در حال پردازش</span>
                     <div className="admin-stat-card__icon" style={{ background: '#eff4fb', color: '#1456c3' }}><Package size={22} /></div>
                   </div>
-                  <strong>{stats.byStatus.processing.toLocaleString('fa-IR')}</strong>
+                  <strong>{(stats.byStatus?.processing ?? 0).toLocaleString('fa-IR')}</strong>
                 </div>
                 <div className="admin-stat-card">
                   <div className="admin-stat-card__top">
                     <span>ارسال‌شده</span>
                     <div className="admin-stat-card__icon" style={{ background: '#e8f6f3', color: '#0891b2' }}><Package size={22} /></div>
                   </div>
-                  <strong>{stats.byStatus.shipped.toLocaleString('fa-IR')}</strong>
+                  <strong>{(stats.byStatus?.shipped ?? 0).toLocaleString('fa-IR')}</strong>
                 </div>
                 <div className="admin-stat-card">
                   <div className="admin-stat-card__top">
                     <span>درآمد پرداخت‌شده</span>
                     <div className="admin-stat-card__icon" style={{ background: '#e8f6f3', color: '#168a68' }}><ShieldCheck size={22} /></div>
                   </div>
-                  <strong>{formatToman(stats.paidRevenue)}</strong>
+                  <strong>{formatToman(stats.paidRevenue ?? stats.revenue)}</strong>
                 </div>
               </div>
             )}
@@ -375,7 +388,7 @@ export function AdminShopOrdersPage() {
                           <strong>{item.customerName}</strong>
                           <small>{item.customerPhone}</small>
                         </td>
-                        <td data-label="تعداد آیتم">{item.items.length.toLocaleString('fa-IR')}</td>
+                        <td data-label="تعداد آیتم">{(item.items?.length ?? 0).toLocaleString('fa-IR')}</td>
                         <td data-label="مبلغ کل">{formatToman(item.total)} تومان</td>
                         <td data-label="پرداخت">
                           <span className="admin-status-badge" style={{ background: `${paymentColors[item.paymentStatus]}15`, color: paymentColors[item.paymentStatus], border: `1px solid ${paymentColors[item.paymentStatus]}30` }}>
@@ -466,7 +479,19 @@ function OrderDetailModal({ order, loading, onClose }: { order: OrderItem | null
               <div><span>وضعیت سفارش</span><strong>{statusLabels[order.status] ?? order.status}</strong></div>
               <div><span>وضعیت پرداخت</span><strong>{paymentLabels[order.paymentStatus] ?? order.paymentStatus}</strong></div>
               <div><span>کد رهگیری</span><strong>{order.trackingCode ?? '—'}</strong></div>
-              <div><span>مبلغ کل</span><strong>{formatToman(order.total)} تومان</strong></div>
+              {order.subtotal !== undefined && order.subtotal !== null && (
+                <div><span>مبلغ سفارش</span><strong>{formatToman(order.subtotal)} تومان</strong></div>
+              )}
+              {order.shippingCost !== undefined && order.shippingCost !== null && (
+                <div><span>هزینه ارسال</span><strong>{formatToman(order.shippingCost)} تومان</strong></div>
+              )}
+              {order.discountTotal !== undefined && order.discountTotal !== null && (
+                <div><span>تخفیف</span><strong>{formatToman(order.discountTotal)} تومان</strong></div>
+              )}
+              {order.tax !== undefined && order.tax !== null && Number(order.tax) > 0 && (
+                <div><span>مالیات</span><strong>{formatToman(order.tax)} تومان</strong></div>
+              )}
+              <div><span>جمع نهایی</span><strong>{formatToman(order.total)} تومان</strong></div>
             </div>
           </div>
 
@@ -483,14 +508,24 @@ function OrderDetailModal({ order, loading, onClose }: { order: OrderItem | null
                   </tr>
                 </thead>
                 <tbody>
-                  {order.items.map((item) => (
-                    <tr key={item.id}>
-                      <td data-label="محصول"><strong>{item.product.name}</strong></td>
-                      <td data-label="تعداد">{item.quantity.toLocaleString('fa-IR')}</td>
-                      <td data-label="قیمت واحد">{formatToman(item.price)} تومان</td>
-                      <td data-label="مجموع">{formatToman(item.price * item.quantity)} تومان</td>
-                    </tr>
-                  ))}
+                  {(order.items ?? []).map((item) => {
+                    const unitPrice = item.unitPrice ?? item.price;
+                    const quantity = Number(item.quantity) || 0;
+                    const lineTotal =
+                      item.lineTotal !== undefined && item.lineTotal !== null
+                        ? item.lineTotal
+                        : unitPrice !== undefined && unitPrice !== null
+                          ? Number(unitPrice) * quantity
+                          : undefined;
+                    return (
+                      <tr key={item.id}>
+                        <td data-label="محصول"><strong>{item.product?.name ?? item.productName ?? '—'}</strong></td>
+                        <td data-label="تعداد">{quantity.toLocaleString('fa-IR')}</td>
+                        <td data-label="قیمت واحد">{formatToman(unitPrice)} تومان</td>
+                        <td data-label="مجموع">{formatToman(lineTotal)} تومان</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

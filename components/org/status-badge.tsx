@@ -1,21 +1,26 @@
 'use client';
 
 export function OrgStatusBadge({ value }: { value: string }) {
+  const normalized = (value || '').toLowerCase();
   const labels: Record<string, string> = {
-    pending: 'در انتظار',
+    pending: 'در انتظار بررسی',
     processing: 'در حال پردازش',
+    in_progress: 'در حال انجام',
+    reviewing: 'در حال بازبینی',
+    need_info: 'نیازمند اطلاعات تکمیلی',
     shipped: 'ارسال شده',
     delivered: 'تحویل شده',
     cancelled: 'لغو شده',
-    new: 'جدید',
+    new: 'جدید (ثبت شده)',
     open: 'باز',
-    closed: 'بسته',
+    closed: 'بسته شده',
     completed: 'تکمیل شده',
+    referred: 'ارجاع شده',
     paid: 'پرداخت شده',
     unpaid: 'پرداخت نشده',
-    overdue: 'معوق',
+    overdue: 'سررسید گذشته (معوق)',
+    partial: 'پرداخت جزئی',
     refunded: 'بازگشت‌داده شده',
-    in_progress: 'در حال انجام',
     draft: 'پیش‌نویس',
     signed: 'امضا شده',
     approved: 'تایید شده',
@@ -25,10 +30,24 @@ export function OrgStatusBadge({ value }: { value: string }) {
     medium: 'متوسط',
     high: 'زیاد',
     urgent: 'فوری',
+    emergency: 'اورژانسی',
     normal: 'عادی',
     active: 'فعال',
     inactive: 'غیرفعال',
-    expired: 'منقضی',
+    expired: 'منقضی شده',
+    service: 'خدماتی / تله‌ریپورت',
+    corporate: 'سازمانی',
+    insurance: 'بیمه‌ای',
+    org_admin: 'مدیر سازمان',
+    org_staff: 'کارشناس سازمان',
+    bank_transfer: 'انتقال بانکی / حواله',
+    online_gateway: 'درگاه پرداخت آنلاین',
+    cheque: 'چک بانکی',
+    credit: 'اعتباری',
   };
-  return <span className={`org-badge org-badge--${value}`}>{labels[value] ?? value}</span>;
+  return (
+    <span className={`org-badge org-badge--${normalized}`}>
+      {labels[normalized] ?? value}
+    </span>
+  );
 }

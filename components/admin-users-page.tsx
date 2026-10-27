@@ -463,8 +463,25 @@ function AddUserModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('user');
   const [country, setCountry] = useState('IR');
+  const [organizationId, setOrganizationId] = useState('');
+  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string }>>([]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const token = window.localStorage.getItem('radinet_auth_token');
+    fetch('/api/admin/organizations?limit=50', {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      cache: 'no-store',
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res?.items && Array.isArray(res.items)) {
+          setOrganizations(res.items);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -472,16 +489,31 @@ function AddUserModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
     setError('');
     try {
       const token = window.localStorage.getItem('radinet_auth_token');
+      const payload: Record<string, string> = {
+        fullName: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        role,
+        country,
+      };
+      if ((role === 'ORG_ADMIN' || role === 'ORG_STAFF') && organizationId) {
+        payload.organizationId = organizationId;
+      }
       const res = await fetch('/api/admin/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ fullName, email, password, role, country }),
+        body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'افزودن کاربر ناموفق بود.');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = Array.isArray(data.message)
+          ? data.message.join('، ')
+          : (data.message ?? data.error ?? 'افزودن کاربر ناموفق بود.');
+        throw new Error(msg);
+      }
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطایی رخ داد.');
@@ -506,7 +538,7 @@ function AddUserModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
           </label>
           <label>
             <span>ایمیل کاربری</span>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="email@example.com" />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="email@example.com" dir="ltr" />
           </label>
           <label>
             <span>رمز عبور اولیه</span>
@@ -517,6 +549,7 @@ function AddUserModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
               required
               minLength={6}
               placeholder="حداقل ۶ کاراکتر"
+              dir="ltr"
             />
           </label>
           <div className="admin-modal__row">
@@ -543,6 +576,19 @@ function AddUserModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
               </select>
             </label>
           </div>
+          {(role === 'ORG_ADMIN' || role === 'ORG_STAFF') && (
+            <label>
+              <span>سازمان مرتبط</span>
+              <select value={organizationId} onChange={(e) => setOrganizationId(e.target.value)}>
+                <option value="">ایجاد / اتصال خودکار سازمان</option>
+                {organizations.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {error && <div className="admin-modal__error">{error}</div>}
           <div className="admin-modal__actions">
             <button type="button" onClick={onClose} className="admin-modal__cancel">
@@ -560,11 +606,30 @@ function AddUserModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
 
 function EditUserModal({ user, onClose, onSaved }: { user: UserItem; onClose: () => void; onSaved: () => void }) {
   const [fullName, setFullName] = useState(user.fullName);
+  const [email, setEmail] = useState(user.email);
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState(user.role);
   const [country, setCountry] = useState(user.country ?? 'IR');
   const [status, setStatus] = useState(user.status ?? 'active');
+  const [organizationId, setOrganizationId] = useState(user.organizationId ?? '');
+  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string }>>([]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const token = window.localStorage.getItem('radinet_auth_token');
+    fetch('/api/admin/organizations?limit=50', {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      cache: 'no-store',
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res?.items && Array.isArray(res.items)) {
+          setOrganizations(res.items);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -572,16 +637,34 @@ function EditUserModal({ user, onClose, onSaved }: { user: UserItem; onClose: ()
     setError('');
     try {
       const token = window.localStorage.getItem('radinet_auth_token');
+      const payload: Record<string, string> = {
+        fullName: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        role,
+        country,
+        status,
+      };
+      if (password.trim()) {
+        payload.password = password;
+      }
+      if ((role === 'ORG_ADMIN' || role === 'ORG_STAFF') && organizationId) {
+        payload.organizationId = organizationId;
+      }
       const res = await fetch(`/api/admin/users/${user.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ fullName, role, country, status }),
+        body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'ویرایش کاربر ناموفق بود.');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = Array.isArray(data.message)
+          ? data.message.join('، ')
+          : (data.message ?? data.error ?? 'ویرایش کاربر ناموفق بود.');
+        throw new Error(msg);
+      }
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطایی رخ داد.');
@@ -603,6 +686,21 @@ function EditUserModal({ user, onClose, onSaved }: { user: UserItem; onClose: ()
           <label>
             <span>نام و نام خانوادگی</span>
             <input value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+          </label>
+          <label>
+            <span>ایمیل کاربری</span>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required dir="ltr" />
+          </label>
+          <label>
+            <span>رمز عبور جدید (اختیاری)</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={6}
+              placeholder="در صورت عدم تغییر خالی بگذارید"
+              dir="ltr"
+            />
           </label>
           <div className="admin-modal__row">
             <label>
@@ -628,6 +726,19 @@ function EditUserModal({ user, onClose, onSaved }: { user: UserItem; onClose: ()
               </select>
             </label>
           </div>
+          {(role === 'ORG_ADMIN' || role === 'ORG_STAFF') && (
+            <label>
+              <span>سازمان مرتبط</span>
+              <select value={organizationId} onChange={(e) => setOrganizationId(e.target.value)}>
+                <option value="">ایجاد / اتصال خودکار سازمان</option>
+                {organizations.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <label>
             <span>وضعیت حساب کاربری</span>
             <select value={status} onChange={(e) => setStatus(e.target.value)}>

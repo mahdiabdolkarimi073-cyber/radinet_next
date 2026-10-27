@@ -15,16 +15,18 @@ const links = [
   { href: '/support-panel/orders', label: 'سفارش‌های فروشگاه', icon: Package },
 ];
 
+const ALLOWED_SUPPORT_ROLES = ['SUPPORT_EXPERT', 'support_expert', 'SUPPORT_ADMIN', 'SUPPORT_AGENT', 'admin'];
+
 export function SupportShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
 
   useEffect(() => {
-    if (!loading && (!user || !['SUPPORT_EXPERT', 'support_expert'].includes(user.role))) router.replace('/auth');
+    if (!loading && (!user || !ALLOWED_SUPPORT_ROLES.includes(user.role))) router.replace('/auth');
   }, [loading, user, router]);
 
-  if (loading || !user || !['SUPPORT_EXPERT', 'support_expert'].includes(user.role)) {
+  if (loading || !user || !ALLOWED_SUPPORT_ROLES.includes(user.role)) {
     return <div className="support-loading"><Activity size={24} className="support-spin" /> در حال بررسی دسترسی...</div>;
   }
 

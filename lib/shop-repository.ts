@@ -24,7 +24,8 @@ export const DEFAULT_CART_CONFIG: ShopCartConfig = {
   freeShippingThreshold: 5000000,
 };
 
-export function formatToman(value: number | string): string {
-  const num = typeof value === 'string' ? Number(value) : value;
-  return `${Math.max(0, Math.round(num || 0)).toLocaleString('fa-IR')} تومان`;
+export function formatToman(value: number | string | null | undefined): string {
+  const num = typeof value === 'number' ? value : Number(value);
+  const safeNum = Number.isFinite(num) ? Math.max(0, Math.round(num)) : 0;
+  return `${safeNum.toLocaleString('fa-IR')} تومان`;
 }

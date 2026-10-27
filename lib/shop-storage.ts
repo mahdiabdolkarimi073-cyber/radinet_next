@@ -1204,13 +1204,15 @@ export async function adminGetOrderStatsServer(): Promise<OrderStatsResponse> {
     total: orders.length,
     byStatus,
     revenue,
+    paidRevenue: revenue,
   };
 }
 
 export async function adminUpdateOrderStatusServer(
   orderNumberOrId: string,
   status: string,
-  trackingCode?: string
+  trackingCode?: string,
+  paymentStatus?: string
 ): Promise<ShopOrder> {
   const db = readDb();
   const orders: ShopOrder[] = db.shopOrders || [];
@@ -1221,6 +1223,7 @@ export async function adminUpdateOrderStatusServer(
   const updated: ShopOrder = {
     ...existing,
     status: status as any,
+    paymentStatus: paymentStatus !== undefined ? (paymentStatus as any) : existing.paymentStatus,
     trackingCode: trackingCode !== undefined ? (trackingCode.trim() || null) : existing.trackingCode,
     updatedAt: new Date().toISOString(),
   };

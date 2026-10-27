@@ -13,6 +13,6 @@ export async function getAgencyId(req: Request): Promise<string | null> {
   const token = auth?.startsWith('Bearer ') ? auth.slice('Bearer '.length) : null;
   if (!token) return null;
   const user = await getMe(token);
-  if (!user || user.role !== 'RADIANT_AGENCY') return null;
+  if (!user || (user.role !== 'RADIANT_AGENCY' && user.role !== 'AGENCY_MANAGER')) return null;
   return user.id;
 }

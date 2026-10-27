@@ -13,6 +13,8 @@ import {
 import { useAuth } from '@/components/auth-provider';
 import { agencyNavItems } from '@/lib/agency-nav';
 
+const ALLOWED_AGENCY_ROLES = ['RADIANT_AGENCY', 'AGENCY_MANAGER'];
+
 export function AgencyShell({ children, title }: { children: ReactNode; title?: string }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -25,12 +27,12 @@ export function AgencyShell({ children, title }: { children: ReactNode; title?: 
       router.replace('/auth');
       return;
     }
-    if (user.role !== 'RADIANT_AGENCY') {
+    if (!ALLOWED_AGENCY_ROLES.includes(user.role)) {
       router.replace('/dashboard');
     }
   }, [user, loading, router]);
 
-  if (loading || !user || user.role !== 'RADIANT_AGENCY') {
+  if (loading || !user || !ALLOWED_AGENCY_ROLES.includes(user.role)) {
     return (
       <div className="agency-loading">
         <Activity size={24} className="agency-spin" /> در حال بررسی دسترسی...

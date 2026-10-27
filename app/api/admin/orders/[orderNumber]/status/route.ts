@@ -12,13 +12,13 @@ export async function PATCH(
     const resolvedParams = await Promise.resolve(params);
     const orderNumber = resolvedParams.orderNumber;
     const body = await req.json();
-    const { status, trackingCode } = body || {};
+    const { status, trackingCode, paymentStatus } = body || {};
 
     if (!status) {
       return NextResponse.json({ error: 'وضعیت سفارش مشخص نشده است.' }, { status: 400 });
     }
 
-    const updated = await adminUpdateOrderStatusServer(orderNumber, status, trackingCode);
+    const updated = await adminUpdateOrderStatusServer(orderNumber, status, trackingCode, paymentStatus);
     return NextResponse.json(updated);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'به‌روزرسانی وضعیت سفارش ناموفق بود.';

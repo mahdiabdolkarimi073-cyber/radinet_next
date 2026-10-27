@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ChevronDown, LogOut, Menu, ShoppingCart, User, X } from 'lucide-react';
 import { cartCount, readCart } from '@/lib/cart';
 import { useAuth } from '@/components/auth-provider';
+import { getPanelPathForRole } from '@/lib/auth-client';
 
 const navItems = [
   { label: 'خانه', href: '/' },
@@ -65,7 +66,7 @@ export function SiteHeader({ activePath }: SiteHeaderProps) {
           {loading ? null : user ? (
             <>
               <span className="header-user"><User size={16} /> {user.fullName || user.email?.split('@')[0]}</span>
-              <a className="button button--outline" href="/dashboard">داشبورد</a>
+              <a className="button button--outline" href={getPanelPathForRole(user.role)}>داشبورد</a>
               <button className="button button--outline" onClick={() => void signOut()}><LogOut size={16} /> خروج</button>
             </>
           ) : (

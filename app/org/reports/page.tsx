@@ -4,163 +4,442 @@ import { useEffect, useState } from 'react';
 import {
   Activity,
   BarChart3,
-  Users,
+  CheckCircle2,
+  Clock,
   Download,
-  Calendar,
+  FileText,
+  Filter,
+  RotateCcw,
+  XCircle,
 } from 'lucide-react';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
-import { orgGet, type OrgReportData } from '@/lib/org-api';
+  orgGet,
+  type OrgReportData,
+  type OrgStaffUser,
+} from '@/lib/org-api';
+import { OrgStatusBadge } from '@/components/org/status-badge';
 
-const PIE_COLORS = ['#2877d4', '#3f9d7b', '#bf8b2b', '#c54b50', '#8b5cf6', '#ec4899'];
+const PIE_COLORS = ['#2877d4', '#3f9d7b', '#bf8b2b', '#c54b50', '#8b5cf6', '#06b6d4'];
 
 export default function OrgReportsPage() {
   const [data, setData] = useState<OrgReportData | null>(null);
+  const [orgUsers, setOrgUsers] = useState<OrgStaffUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [tab, setTab] = useState<'byUser' | 'byType' | 'byDate'>('byDate');
-  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
 
-  function load() {
+  // Filters
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [userFilter, setUserFilter] = useState('');
+
+  useEffect(() => {
+    orgGet<OrgStaffUser[]>('/users')
+      .then(setOrgUsers)
+      .catch(() => {});
+  }, []);
+
+  function loadReports() {
     setLoading(true);
+    setError('');
     const params = new URLSearchParams();
-    if (dateRange.startDate) params.set('startDate', dateRange.startDate);
-    if (dateRange.endDate) params.set('endDate', dateRange.endDate);
-    orgGet<OrgReportData>(`/reports?${params}`)
+    if (startDate) params.set('startDate', startDate);
+    if (endDate) params.set('endDate', endDate);
+    if (statusFilter) params.set('status', statusFilter);
+    if (typeFilter) params.set('type', typeFilter);
+    if (userFilter) params.set('userId', userFilter);
+    const qs = params.toString();
+
+    orgGet<OrgReportData>(`/reports${qs ? `?${qs}` : ''}`)
       .then(setData)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    loadReports();
+  }, [statusFilter, typeFilter, userFilter]);
+
+  function handleResetFilters() {
+    setStartDate('');
+    setEndDate('');
+    setStatusFilter('');
+    setTypeFilter('');
+    setUserFilter('');
+    setLoading(true);
+    orgGet<OrgReportData>('/reports')
+      .then(setData)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }
 
   function exportCSV() {
     if (!data) return;
-    let rows: string[][] = [];
-    let headers: string[] = [];
-    if (tab === 'byUser') {
-      headers = ['کاربر', 'تعداد'];
-      rows = data.byUser.map((r) => [r.name, String(r.count)]);
-    } else if (tab === 'byType') {
-      headers = ['نوع تصویربرداری', 'تعداد'];
-      rows = data.byType.map((r) => [r.name, String(r.count)]);
-    } else {
-      headers = ['تاریخ', 'تعداد'];
-      rows = data.byDate.map((r) => [r.date, String(r.count)]);
-    }
-    const csv = [headers, ...rows].map((r) => r.join(',')).join('\n');
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const rows = [
+      ['بخش', 'عنوان / نام', 'کل درخواست‌ها', 'تکمیل‌شده', 'در انتظار', 'ردشده'],
+      ...data.byUser.map((u) => [
+        'کاربر سازمان',
+        u.name,
+        String(u.count),
+        String(u.completed),
+        String(u.pending),
+        String(u.rejected),
+      ]),
+      ...data.byType.map((t) => ['نوع خدمت', t.name, String(t.count), '-', '-', '-']),
+      ...data.byStatus.map((s) => ['وضعیت درخواست', s.status, String(s.count), '-', '-', '-']),
+      ...data.byDate.map((d) => ['تاریخ', d.date, String(d.count), '-', '-', '-']),
+    ];
+    const csv = '\uFEFF' + rows.map((r) => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `report-${tab}-${Date.now()}.csv`;
+    a.download = `org-report-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
-  if (loading)
-    return (
-      <div className="org-page">
-        <div className="org-loading" style={{ minHeight: 400 }}><Activity size={24} className="org-spin" /> در حال بارگذاری...</div>
-      </div>
-    );
-  if (error) return <div className="org-page"><div className="org-error">{error}</div></div>;
-  if (!data) return null;
-
-  const totalByUser = data.byUser.reduce((s, r) => s + r.count, 0);
-  const totalByType = data.byType.reduce((s, r) => s + r.count, 0);
-  const totalByDate = data.byDate.reduce((s, r) => s + r.count, 0);
+  const totalByType = data ? data.byType.reduce((s, i) => s + i.count, 0) || 1 : 1;
+  const maxDate = data ? Math.max(...data.byDate.map((d) => d.count), 1) : 1;
 
   return (
     <div className="org-page">
-      <div className="org-page-title">
-        <span>گزارش‌ها و آمار</span>
-        <h2>تحلیل درخواست‌های تله‌ریپورت</h2>
-        <p>آمار تفکیکی بر اساس کاربر، نوع تصویربرداری و تاریخ</p>
-      </div>
-
-      <div className="org-search-bar">
-        <div className="org-field" style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Calendar size={18} className="org-muted" />
-          <input type="date" value={dateRange.startDate} onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })} style={{ border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: 14, color: '#2d4562' }} />
-          <span className="org-muted">تا</span>
-          <input type="date" value={dateRange.endDate} onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })} style={{ border: 'none', outline: 'none', fontFamily: 'inherit', fontSize: 14, color: '#2d4562' }} />
+      <div
+        className="org-page-title"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
+        <div>
+          <span>گزارش‌ها و آمار عملکرد</span>
+          <h2>گزارش‌های تجمیعی درخواست‌های سازمان</h2>
+          <p>
+            تحلیل عملکرد درخواست‌ها بر اساس کاربران زیرمجموعه، بازه زمانی، نوع خدمت و وضعیت پرونده‌ها
+          </p>
         </div>
-        <button className="org-button secondary" onClick={load}>اعمال فیلتر</button>
-        <button className="org-button secondary" onClick={exportCSV}><Download size={16} /> خروجی CSV</button>
+        <button
+          className="org-button secondary"
+          onClick={exportCSV}
+          disabled={!data || data.summary.total === 0}
+        >
+          <Download size={16} /> دانلود خروجی CSV
+        </button>
       </div>
 
-      <div className="org-tabs">
-        <button className={`org-tab ${tab === 'byDate' ? 'is-active' : ''}`} onClick={() => setTab('byDate')}>روند روزانه (۳۰ روز)</button>
-        <button className={`org-tab ${tab === 'byUser' ? 'is-active' : ''}`} onClick={() => setTab('byUser')}>بر اساس کاربر</button>
-        <button className={`org-tab ${tab === 'byType' ? 'is-active' : ''}`} onClick={() => setTab('byType')}>بر اساس نوع</button>
-      </div>
-
+      {/* فیلترهای گزارش‌گیری */}
       <div className="org-card">
-        {tab === 'byDate' && (
-          <>
-            <h3>روند روزانه درخواست‌ها — مجموع: {totalByDate}</h3>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={data.byDate}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#edf1f6" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#7890a7' }} angle={-45} textAnchor="end" height={60} />
-                <YAxis tick={{ fontSize: 12, fill: '#7890a7' }} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #e8eef5', fontSize: 13 }} />
-                <Bar dataKey="count" fill="#2877d4" radius={[6, 6, 0, 0]} name="تعداد درخواست" />
-              </BarChart>
-            </ResponsiveContainer>
-          </>
-        )}
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            alignItems: 'flex-end',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div className="org-field" style={{ flex: '1 1 150px' }}>
+            <label>از تاریخ</label>
+            <input
+              type="date"
+              dir="ltr"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div className="org-field" style={{ flex: '1 1 150px' }}>
+            <label>تا تاریخ</label>
+            <input
+              type="date"
+              dir="ltr"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+          <div className="org-field" style={{ flex: '1 1 160px' }}>
+            <label>کاربر زیرمجموعه</label>
+            <select value={userFilter} onChange={(e) => setUserFilter(e.target.value)}>
+              <option value="">همه کاربران سازمان</option>
+              {orgUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.fullName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="org-field" style={{ flex: '1 1 150px' }}>
+            <label>نوع خدمت</label>
+            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+              <option value="">همه انواع خدمات</option>
+              <option value="MRI">MRI</option>
+              <option value="CT Scan">CT Scan</option>
+              <option value="X-Ray (رادیوگرافی)">X-Ray (رادیوگرافی)</option>
+              <option value="سونوگرافی (Ultrasound)">سونوگرافی (Ultrasound)</option>
+              <option value="ماموگرافی (Mammography)">ماموگرافی (Mammography)</option>
+              <option value="PET Scan">PET Scan</option>
+              <option value="OPG / رادیولوژی دهان و فک">OPG / رادیولوژی دهان و فک</option>
+            </select>
+          </div>
+          <div className="org-field" style={{ flex: '1 1 140px' }}>
+            <label>وضعیت</label>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="">همه وضعیت‌ها</option>
+              <option value="new">جدید</option>
+              <option value="pending">در انتظار</option>
+              <option value="in_progress">در حال انجام</option>
+              <option value="completed">تکمیل شده</option>
+              <option value="rejected">رد شده</option>
+            </select>
+          </div>
+          <button className="org-button" style={{ height: 44 }} onClick={loadReports}>
+            <Filter size={16} /> اعمال فیلتر تاریخ
+          </button>
+          <button
+            type="button"
+            className="org-button secondary"
+            style={{ height: 44 }}
+            onClick={handleResetFilters}
+          >
+            <RotateCcw size={15} /> بازنشانی
+          </button>
+        </div>
+      </div>
 
-        {tab === 'byUser' && (
-          <>
-            <h3>درخواست‌ها بر اساس کاربر — مجموع: {totalByUser}</h3>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={data.byUser} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#edf1f6" />
-                <XAxis type="number" tick={{ fontSize: 12, fill: '#7890a7' }} allowDecimals={false} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#38516e' }} width={120} />
-                <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #e8eef5', fontSize: 13 }} />
-                <Bar dataKey="count" fill="#3f9d7b" radius={[0, 6, 6, 0]} name="تعداد درخواست" />
-              </BarChart>
-            </ResponsiveContainer>
-          </>
-        )}
+      {error && <div className="org-error">{error}</div>}
 
-        {tab === 'byType' && (
-          <>
-            <h3>توزیع بر اساس نوع تصویربرداری — مجموع: {totalByType}</h3>
-            <div className="org-pie-wrap">
-              <ResponsiveContainer width={260} height={260}>
-                <PieChart>
-                  <Pie data={data.byType} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={100} innerRadius={55} paddingAngle={2}>
-                    {data.byType.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #e8eef5', fontSize: 13 }} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="org-pie-legend">
-                {data.byType.map((item, i) => (
-                  <div key={i} className="org-pie-legend-item">
-                    <span style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                    {item.name}: {item.count}
+      {loading ? (
+        <div className="org-loading" style={{ minHeight: 280 }}>
+          <Activity size={24} className="org-spin" /> در حال محاسبه گزارش‌های تجمیعی سازمان...
+        </div>
+      ) : data ? (
+        <>
+          {/* شاخص‌های عملکردی کلیدی (KPI) */}
+          <div className="org-grid-4" style={{ marginBottom: 18 }}>
+            <div className="org-stat">
+              <div className="org-stat-icon" style={{ background: '#eaf3ff', color: '#2877d4' }}>
+                <FileText size={22} />
+              </div>
+              <div>
+                <span>کل درخواست‌ها در بازه</span>
+                <strong>{data.summary.total.toLocaleString('fa-IR')}</strong>
+              </div>
+            </div>
+
+            <div className="org-stat">
+              <div className="org-stat-icon" style={{ background: '#e9fbf4', color: '#3f9d7b' }}>
+                <CheckCircle2 size={22} />
+              </div>
+              <div>
+                <span>درخواست‌های تکمیل‌شده</span>
+                <strong>{data.summary.completed.toLocaleString('fa-IR')}</strong>
+                <small className="org-muted" style={{ display: 'block', marginTop: 2 }}>
+                  نرخ تکمیل: {data.summary.completionRate.toLocaleString('fa-IR')}%
+                </small>
+              </div>
+            </div>
+
+            <div className="org-stat">
+              <div className="org-stat-icon" style={{ background: '#fff7e5', color: '#bf8b2b' }}>
+                <Clock size={22} />
+              </div>
+              <div>
+                <span>در انتظار / در حال انجام</span>
+                <strong>{data.summary.pending.toLocaleString('fa-IR')}</strong>
+              </div>
+            </div>
+
+            <div className="org-stat">
+              <div className="org-stat-icon" style={{ background: '#fff0f0', color: '#c54b50' }}>
+                <XCircle size={22} />
+              </div>
+              <div>
+                <span>درخواست‌های ردشده</span>
+                <strong>{data.summary.rejected.toLocaleString('fa-IR')}</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* گزارش تفکیکی عملکرد کاربران زیرمجموعه */}
+          <div className="org-card">
+            <h3>آمار عملکرد و درخواست‌ها به تفکیک کاربران سازمان</h3>
+            {data.byUser.length === 0 ? (
+              <div className="org-empty">داده‌ای برای نمایش وجود ندارد</div>
+            ) : (
+              <div className="org-table-wrap">
+                <table className="org-table">
+                  <thead>
+                    <tr>
+                      <th>نام کاربر سازمان</th>
+                      <th>نقش سازمانی</th>
+                      <th>کل درخواست‌های ثبت‌شده</th>
+                      <th>تکمیل‌شده</th>
+                      <th>در انتظار / در جریان</th>
+                      <th>ردشده</th>
+                      <th>درصد سهم از کل</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.byUser.map((u) => {
+                      const share =
+                        data.summary.total > 0
+                          ? Math.round((u.count / data.summary.total) * 100)
+                          : 0;
+                      return (
+                        <tr key={u.userId}>
+                          <td>
+                            <strong>{u.name}</strong>
+                          </td>
+                          <td>
+                            <OrgStatusBadge value={u.role} />
+                          </td>
+                          <td>
+                            <strong>{u.count.toLocaleString('fa-IR')}</strong>
+                          </td>
+                          <td style={{ color: '#2f855a' }}>
+                            {u.completed.toLocaleString('fa-IR')}
+                          </td>
+                          <td style={{ color: '#bf8b2b' }}>
+                            {u.pending.toLocaleString('fa-IR')}
+                          </td>
+                          <td style={{ color: '#c54b50' }}>
+                            {u.rejected.toLocaleString('fa-IR')}
+                          </td>
+                          <td>{share.toLocaleString('fa-IR')}%</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* تفکیک بر اساس وضعیت و نوع خدمت */}
+          <div className="org-grid-2">
+            <div className="org-card">
+              <h3>تفکیک درخواست‌ها بر اساس وضعیت</h3>
+              {data.byStatus.length === 0 ? (
+                <div className="org-empty">هنوز درخواستی ثبت نشده است</div>
+              ) : (
+                <div className="org-table-wrap">
+                  <table className="org-table" style={{ minWidth: 320 }}>
+                    <thead>
+                      <tr>
+                        <th>وضعیت درخواست</th>
+                        <th>تعداد</th>
+                        <th>درصد</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.byStatus.map((s) => (
+                        <tr key={s.status}>
+                          <td>
+                            <OrgStatusBadge value={s.status} />
+                          </td>
+                          <td>
+                            <strong>{s.count.toLocaleString('fa-IR')}</strong>
+                          </td>
+                          <td>
+                            {Math.round(
+                              (s.count / Math.max(1, data.summary.total)) * 100,
+                            ).toLocaleString('fa-IR')}
+                            %
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="org-card">
+              <h3>توزیع درخواست‌ها بر اساس نوع خدمت تصویربرداری</h3>
+              {data.byType.length === 0 ? (
+                <div className="org-empty">داده‌ای وجود ندارد</div>
+              ) : (
+                <div className="org-pie-wrap">
+                  <div className="org-pie-center-label">
+                    <strong>
+                      {data.byType.reduce((s, i) => s + i.count, 0).toLocaleString('fa-IR')}
+                    </strong>
+                    کل درخواست‌ها
+                  </div>
+                  <div className="org-pie-legend">
+                    {data.byType.map((item, i) => (
+                      <div className="org-pie-legend-item" key={item.name}>
+                        <span style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                        {item.name}: {item.count.toLocaleString('fa-IR')} (
+                        {Math.round((item.count / totalByType) * 100)}%)
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* روند زمانی ثبت درخواست‌ها */}
+          <div className="org-card">
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <BarChart3 size={18} /> روند زمانی ثبت درخواست‌ها (بر اساس تاریخ)
+            </h3>
+            {data.byDate.length === 0 ? (
+              <div className="org-empty">داده‌ای برای نمایش روند زمانی وجود ندارد</div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  gap: 10,
+                  height: 190,
+                  padding: '20px 0',
+                  overflowX: 'auto',
+                }}
+              >
+                {data.byDate.map((d) => (
+                  <div
+                    key={d.date}
+                    style={{
+                      flex: '0 0 auto',
+                      minWidth: 46,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#172e50' }}>
+                      {d.count.toLocaleString('fa-IR')}
+                    </span>
+                    <div
+                      style={{
+                        width: 28,
+                        height: `${Math.max((d.count / maxDate) * 125, 8)}px`,
+                        background: 'linear-gradient(180deg, #2877d4, #1765d1)',
+                        borderRadius: '6px 6px 0 0',
+                      }}
+                    />
+                    <small
+                      style={{
+                        fontSize: 10,
+                        color: '#7890a7',
+                        writingMode: 'vertical-rl',
+                      }}
+                      dir="ltr"
+                    >
+                      {d.date}
+                    </small>
                   </div>
                 ))}
               </div>
-            </div>
-          </>
-        )}
-      </div>
+            )}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

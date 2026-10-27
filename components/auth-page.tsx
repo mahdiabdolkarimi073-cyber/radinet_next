@@ -7,6 +7,7 @@ import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { fallbackData } from '@/lib/home-data';
 import { useAuth } from '@/components/auth-provider';
+import { getPanelPathForRole } from '@/lib/auth-client';
 
 type AuthMode = 'login' | 'signup';
 
@@ -56,12 +57,8 @@ export function AuthPage() {
         const result = await signIn(email.trim(), password);
         if (!result.ok) {
           setError(result.error ?? 'ورود ناموفق بود');
-        } else if (result.role === 'admin') {
-          window.location.href = '/admin';
-        } else if (result.role === 'ORG_ADMIN' || result.role === 'ORG_STAFF') {
-          window.location.href = '/org';
         } else {
-          window.location.href = '/dashboard';
+          window.location.href = getPanelPathForRole(result.role);
         }
       } else {
         const result = await signUp(fullName.trim() || 'کاربر', email.trim(), password);
