@@ -1,0 +1,189 @@
+.pf-root {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8fafd 0%, #f1f5fa 100%);
+  color: #10254a;
+  direction: rtl;
+  font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
+}
+.pf-shell { min-height: 100vh; display: flex; align-items: stretch; }
+.pf-content { min-width: 0; flex: 1; order: 1; }
+
+/* ── Sidebar ── */
+.pf-sidebar {
+  width: 294px; min-height: 100vh; flex: 0 0 294px; order: 2;
+  display: flex; flex-direction: column; padding: 0 20px 30px;
+  background: linear-gradient(180deg, #071d41 0%, #0b3470 100%);
+  position: sticky; top: 0; z-index: 50;
+}
+.pf-brand { min-height: 112px; display: flex; align-items: center; gap: 14px; padding: 0 10px; border-bottom: 1px solid rgba(255,255,255,.12); }
+.pf-brand__mark { width: 50px; height: 50px; display: grid; place-items: center; border: 2px solid #d0a04a; border-radius: 16px 16px 16px 5px; color: #d0a04a; transform: rotate(-9deg); }
+.pf-brand__mark svg { transform: rotate(9deg); }
+.pf-brand strong { display: block; color: #fff; font-size: 17px; font-weight: 800; }
+.pf-brand span { display: block; margin-top: 6px; color: #8ea4c5; font-size: 11px; }
+.pf-nav { display: flex; flex-direction: column; gap: 7px; margin-top: 31px; }
+.pf-nav__item, .pf-nav__logout {
+  width: 100%; height: 53px; display: flex; align-items: center; gap: 15px; padding: 0 18px;
+  border: 0; border-radius: 12px; background: transparent; color: #d7e2f2;
+  font: inherit; font-size: 14px; font-weight: 500; text-align: right; text-decoration: none;
+  position: relative; transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+.pf-nav__item svg, .pf-nav__logout svg { color: #9eb3cf; flex: 0 0 auto; }
+.pf-nav__item:hover { background: rgba(255,255,255,.07); color: #fff; }
+.pf-nav__item:hover svg { color: #fff; }
+.pf-nav__item.is-active { background: linear-gradient(90deg, #11499e, #165fcb); color: #fff; font-weight: 700; box-shadow: 0 8px 20px rgba(0,0,0,.12); }
+.pf-nav__item.is-active svg { color: #fff; }
+.pf-nav__item.is-active::after { content: ''; position: absolute; right: 0; top: 12px; width: 3px; height: 29px; border-radius: 3px 0 0 3px; background: #d0a04a; }
+.pf-nav__logout { margin-top: auto; border: 1px solid rgba(255,255,255,.14); color: #fff; cursor: pointer; }
+.pf-nav__logout svg { color: #d7a34a; }
+.pf-nav__logout:hover { background: rgba(255,255,255,.07); transform: translateY(-2px); }
+.pf-overlay { display: none; }
+
+/* ── Header ── */
+.pf-header {
+  height: 94px; margin: 17px 25px 0; padding: 0 27px;
+  display: flex; align-items: center; justify-content: space-between;
+  border: 1px solid #e8edf4; border-radius: 17px; background: #fff;
+  box-shadow: 0 7px 24px rgba(16,37,74,.05);
+}
+.pf-profile, .pf-header__actions { display: flex; align-items: center; }
+.pf-profile { gap: 12px; }
+.pf-avatar { width: 47px; height: 47px; display: grid; place-items: center; border: 1px solid #dce5f2; border-radius: 50%; background: #eff4fb; color: #0b2a5b; font-size: 18px; font-weight: 800; }
+.pf-profile strong { display: block; color: #10254a; font-size: 14px; font-weight: 800; }
+.pf-profile span { display: block; margin-top: 5px; color: #8795a9; font-size: 11px; }
+.pf-profile__chevron { margin-right: 5px; color: #75859c; }
+.pf-header__actions { gap: 20px; color: #102d5c; }
+.pf-header__icon { width: 28px; height: 32px; display: grid; place-items: center; position: relative; padding: 0; border: 0; background: transparent; color: #102d5c; }
+.pf-header__icon span { position: absolute; top: -4px; right: -7px; min-width: 17px; height: 17px; display: grid; place-items: center; padding: 0 3px; border: 2px solid #fff; border-radius: 50%; background: #102d5c; color: #fff; font-size: 9px; line-height: 1; }
+.pf-header__divider { width: 1px; height: 39px; background: #e6ebf2; }
+.pf-burger { display: none; border: 0; background: transparent; color: #10254a; }
+
+/* ── Main ── */
+.pf-main { width: min(1400px, 100%); margin: 0 auto; padding: 21px 25px 38px; }
+.pf-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.pf-title h2 { margin: 0; font-size: 28px; font-weight: 700; color: #10254a; }
+.pf-title p { margin: 8px 0 0; font-size: 14px; color: #718198; }
+.pf-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #1456c3; text-decoration: none; font-weight: 700; padding: 10px 18px; border: 1px solid #cad8eb; border-radius: 10px; transition: background .2s ease, border-color .2s ease; }
+.pf-back:hover { background: #f8fbff; border-color: #1456c3; }
+
+.pf-error { background: #fdecec; color: #b3313d; padding: 14px 18px; border-radius: 12px; font-size: 14px; text-align: center; border: 1px solid #f2c6c9; margin-bottom: 20px; }
+.pf-loading { text-align: center; padding: 60px 0; color: #9aa7b7; font-size: 16px; }
+
+/* ── Patient Card ── */
+.pf-patient-card {
+  background: #fff; border: 1px solid #e7ecf3; border-radius: 18px; padding: 24px;
+  box-shadow: 0 8px 30px rgba(16,37,74,.06); margin-bottom: 20px;
+}
+.pf-patient-card__head { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eef1f5; }
+.pf-patient-avatar { width: 64px; height: 64px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 16px; background: linear-gradient(135deg, #eaf2ff, #d0e3ff); color: #1456c3; font-size: 22px; font-weight: 800; }
+.pf-patient-info { flex: 1; min-width: 0; }
+.pf-patient-info h3 { margin: 0; font-size: 22px; font-weight: 800; color: #10254a; }
+.pf-patient-info span { display: block; margin-top: 6px; font-size: 13px; color: #718198; }
+.pf-status { padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.pf-status--new, .pf-status--pending { background: #fff6e5; color: #c9973e; }
+.pf-status--in_progress, .pf-status--reviewing, .pf-status--referred { background: #eaf2ff; color: #1456c3; }
+.pf-status--completed { background: #e8f7f1; color: #168a68; }
+.pf-status--rejected { background: #fdecec; color: #d94b55; }
+
+.pf-patient-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.pf-field { display: flex; flex-direction: column; gap: 6px; }
+.pf-field span { font-size: 12px; color: #9aa7b7; font-weight: 600; }
+.pf-field strong { font-size: 15px; color: #10254a; font-weight: 700; }
+
+/* ── Clinical Card ── */
+.pf-clinical-card, .pf-images-card, .pf-docs-card, .pf-reports-card {
+  background: #fff; border: 1px solid #e7ecf3; border-radius: 18px; padding: 24px;
+  box-shadow: 0 8px 30px rgba(16,37,74,.06); margin-bottom: 20px;
+}
+.pf-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #eef1f5; }
+.pf-card-head h3 { margin: 0; font-size: 18px; font-weight: 700; color: #10254a; display: flex; align-items: center; gap: 10px; }
+.pf-card-head h3 svg { color: #c9973e; }
+.pf-card-head > span { font-size: 13px; color: #718198; background: #f5f8fc; padding: 6px 14px; border-radius: 8px; }
+
+.pf-clinical-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+.pf-clinical-field { display: flex; flex-direction: column; gap: 6px; }
+.pf-clinical-field--full { grid-column: 1 / -1; }
+.pf-clinical-field label { font-size: 12px; color: #9aa7b7; font-weight: 600; }
+.pf-clinical-field strong { font-size: 15px; color: #10254a; font-weight: 700; }
+.pf-clinical-field p { margin: 0; font-size: 14px; color: #475569; line-height: 1.8; }
+.pf-link { color: #1456c3; text-decoration: none; font-size: 14px; word-break: break-all; }
+.pf-link:hover { text-decoration: underline; }
+
+/* ── Image Grid ── */
+.pf-image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.pf-image-thumb { position: relative; border: 1px solid #e5eaf1; border-radius: 14px; overflow: hidden; cursor: pointer; background: #f8fafd; padding: 0; font-family: inherit; transition: border-color .2s ease, box-shadow .2s ease; }
+.pf-image-thumb:hover { border-color: #1456c3; box-shadow: 0 8px 24px rgba(20,86,195,.12); }
+.pf-image-thumb img { width: 100%; height: 180px; object-fit: cover; display: block; }
+.pf-image-thumb__name { display: block; padding: 8px 12px; font-size: 12px; color: #475569; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-image-thumb__zoom { position: absolute; top: 10px; left: 10px; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; background: rgba(7,29,65,.8); color: #fff; opacity: 0; transition: opacity .2s ease; }
+.pf-image-thumb:hover .pf-image-thumb__zoom { opacity: 1; }
+
+/* ── Docs ── */
+.pf-doc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.pf-doc-list li { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid #e5eaf1; border-radius: 12px; transition: border-color .2s ease; }
+.pf-doc-list li:hover { border-color: #cad8eb; }
+.pf-doc-list li svg { color: #1456c3; flex: 0 0 auto; }
+.pf-doc-list li span { flex: 1; font-size: 14px; color: #254064; font-weight: 600; }
+.pf-doc-list li small { font-size: 12px; color: #9aa7b7; }
+.pf-doc-download { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; border: 1px solid #cad8eb; color: #1456c3; transition: all .15s ease; }
+.pf-doc-download:hover { background: #1456c3; color: #fff; border-color: #1456c3; }
+
+/* ── Reports List ── */
+.pf-new-report { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border: 1px solid #b8e6d2; border-radius: 10px; color: #168a68; font-size: 13px; font-weight: 700; text-decoration: none; transition: all .15s ease; }
+.pf-new-report:hover { background: #168a68; color: #fff; border-color: #168a68; }
+.pf-empty { text-align: center; padding: 36px 0; color: #9aa7b7; font-size: 14px; }
+.pf-report-list { display: flex; flex-direction: column; gap: 12px; }
+.pf-report-item { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 1px solid #e5eaf1; border-radius: 14px; text-decoration: none; color: inherit; transition: border-color .2s ease, background .2s ease; }
+.pf-report-item:hover { border-color: #1456c3; background: #f8fbff; }
+.pf-report-item__icon { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 12px; background: #eaf2ff; color: #1456c3; }
+.pf-report-item__body { flex: 1; min-width: 0; }
+.pf-report-item__body strong { display: block; font-size: 15px; font-weight: 700; color: #10254a; }
+.pf-report-item__body span { display: block; margin-top: 4px; font-size: 12px; color: #9aa7b7; }
+.pf-report-signed { padding: 4px 12px; border-radius: 8px; background: #e8f7f1; color: #168a68; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.pf-report-item__arrow { color: #9aa7b7; flex: 0 0 auto; }
+
+/* ── Image Viewer ── */
+.pf-viewer-backdrop { position: fixed; inset: 0; background: rgba(7,29,65,.85); display: grid; place-items: center; z-index: 200; padding: 16px; backdrop-filter: blur(6px); }
+.pf-viewer { background: #0a1a35; border-radius: 18px; max-width: 92vw; max-height: 92vh; width: 900px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.4); animation: pfViewerIn .25s ease; }
+@keyframes pfViewerIn { from { transform: scale(.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.pf-viewer__toolbar { display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,.1); }
+.pf-viewer__toolbar button { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.15); border-radius: 10px; background: transparent; color: #d7e2f2; cursor: pointer; transition: all .15s ease; }
+.pf-viewer__toolbar button:hover { background: rgba(255,255,255,.1); color: #fff; }
+.pf-viewer__toolbar button:last-child { margin-right: auto; }
+.pf-viewer__stage { flex: 1; min-height: 0; display: grid; place-items: center; overflow: auto; padding: 20px; }
+.pf-viewer__stage img { max-width: 100%; max-height: 100%; object-fit: contain; transition: transform .2s ease; }
+.pf-viewer__info { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,.1); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.pf-viewer__info strong { color: #fff; font-size: 14px; font-weight: 700; }
+.pf-viewer__info span { color: #8ea4c5; font-size: 12px; }
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .pf-sidebar { width: 80px; flex-basis: 80px; padding: 0 12px 22px; }
+  .pf-brand { justify-content: center; padding: 0; }
+  .pf-brand > div:last-child, .pf-nav__item span, .pf-nav__logout span { display: none; }
+  .pf-nav__item, .pf-nav__logout { justify-content: center; padding: 0; }
+  .pf-nav__item.is-active::after { right: -12px; }
+  .pf-patient-grid { grid-template-columns: repeat(2, 1fr); }
+  .pf-clinical-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .pf-shell { display: block; }
+  .pf-sidebar { width: 280px; min-height: 100vh; height: 100vh; flex-basis: auto; padding: 0 20px 28px; position: fixed; top: 0; right: 0; transform: translateX(100%); transition: transform .25s ease; }
+  .pf-sidebar.is-open { transform: translateX(0); }
+  .pf-brand { justify-content: flex-start; padding: 0 10px; }
+  .pf-brand > div:last-child, .pf-nav__item span, .pf-nav__logout span { display: block; }
+  .pf-nav__item, .pf-nav__logout { justify-content: flex-start; padding: 0 18px; }
+  .pf-nav__item.is-active::after { right: 0; }
+  .pf-overlay { display: block; position: fixed; inset: 0; z-index: 40; background: rgba(7,29,65,.42); backdrop-filter: blur(2px); }
+  .pf-header { height: 72px; margin: 10px 12px 0; padding: 0 15px; border-radius: 14px; }
+  .pf-burger { display: grid; place-items: center; order: 3; }
+  .pf-profile { order: 2; margin-right: auto; }
+  .pf-header__actions { order: 1; gap: 11px; }
+  .pf-header__divider, .pf-header__icon:last-child { display: none; }
+  .pf-profile span, .pf-profile__chevron { display: none; }
+  .pf-avatar { width: 40px; height: 40px; font-size: 16px; }
+  .pf-main { padding: 14px 12px 24px; }
+  .pf-title { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .pf-title h2 { font-size: 22px; }
+  .pf-patient-grid { grid-template-columns: 1fr; }
+  .pf-patient-card__head { flex-wrap: wrap; }
+}
