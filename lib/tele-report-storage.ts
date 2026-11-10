@@ -934,6 +934,7 @@ export async function listRadiologistDoctorsServer(): Promise<StoredDoctorProfil
   const doctorUsers = users.filter((u) => u.role === 'radiologist' || u.role === 'doctor');
 
   const map = new Map<string, StoredDoctorProfile>();
+  const seenEmails = new Set<string>();
 
   for (const p of profiles) {
     if (p.isActive !== false) {
@@ -949,11 +950,14 @@ export async function listRadiologistDoctorsServer(): Promise<StoredDoctorProfil
         stats: { totalReports: 0, signedReports: 0, completedReports: 0, avgResponseHours: null },
       };
       map.set(p.userId, fullDoc);
+      const email = (p.email || '').trim().toLowerCase();
+      if (email) seenEmails.add(email);
     }
   }
 
   for (const u of doctorUsers) {
-    if (!map.has(u.id)) {
+    const email = (u.email || '').trim().toLowerCase();
+    if (!map.has(u.id) && (!email || !seenEmails.has(email))) {
       const newProf: StoredDoctorProfile = {
         id: `doc-${u.id}`,
         userId: u.id,
@@ -972,6 +976,7 @@ export async function listRadiologistDoctorsServer(): Promise<StoredDoctorProfil
         stats: { totalReports: 0, signedReports: 0, completedReports: 0, avgResponseHours: null },
       };
       map.set(u.id, newProf);
+      if (email) seenEmails.add(email);
     }
   }
 
@@ -1011,7 +1016,9 @@ export async function listAdminTeleReportsServer(query: {
     filtered = filtered.filter(
       (r) =>
         r.assignedDoctorId === query.assignedDoctorId ||
-        reports.some((rep) => rep.requestId === r.id && rep.authorId === query.assignedDoctorId),
+        (r as any).assignedDoctorProfileId === query.assignedDoctorId ||
+        (r as any).assignedDoctorUserId === query.assignedDoctorId ||
+        reports.some((rep) => rep.requestId === r.id && (rep.authorId === query.assignedDoctorId || rep.author?.id === query.assignedDoctorId)),
     );
   }
   if (query.search?.trim()) {
@@ -1153,7 +1160,11 @@ export async function assignDoctorToTeleReportServer(
   if (!doctor && typeof fetch !== 'undefined') {
     try {
       const { BACKEND_URL } = await import('@/lib/auth-client');
-      const bRes = await fetch(`${BACKEND_URL}/support/telereports/doctors`).catch(() => null);
+      const { signJwtTokenServer } = await import('@/lib/server-auth');
+      const token = signJwtTokenServer({ sub: '00000000-0000-4000-a000-000000000001', role: 'support_expert' });
+      const bRes = await fetch(`${BACKEND_URL}/support/telereports/doctors`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => null);
       if (bRes && bRes.ok) {
         const bList = await bRes.json().catch(() => []);
         const bDoc = (Array.isArray(bList) ? bList : []).find(
@@ -1197,9 +1208,12 @@ export async function assignDoctorToTeleReportServer(
   }
 
   const doctorUserId = doctor.userId || doctor.id;
+  const doctorProfileId = doctor.id || doctor.userId;
   const nowIso = new Date().toISOString();
   const reqItem = requests[reqIdx];
-  reqItem.assignedDoctorId = doctorUserId;
+  reqItem.assignedDoctorId = doctorProfileId;
+  (reqItem as any).assignedDoctorProfileId = doctorProfileId;
+  (reqItem as any).assignedDoctorUserId = doctorUserId;
   reqItem.assignedDoctorName = doctor.fullName;
   reqItem.status = 'assigned';
   reqItem.updatedAt = nowIso;
@@ -1217,8 +1231,8 @@ export async function assignDoctorToTeleReportServer(
     report = {
       id: `rep-${Date.now().toString(36)}`,
       requestId: reqItem.id,
-      authorId: doctor.userId,
-      author: { id: doctor.userId, fullName: doctor.fullName, email: doctor.email },
+      authorId: doctorUserId,
+      author: { id: doctorUserId, fullName: doctor.fullName, email: doctor.email },
       findings: '',
       conclusion: '',
       status: 'draft',
@@ -1444,7 +1458,22 @@ export async function listDoctorReferralsServer(query: {
 }
 
 export async function getAdminTeleReportDetailServer(identifier: string) {
-  const item = await getTeleReportRequestByNumberOrIdServer(identifier);
+  let item = await getTeleReportRequestByNumberOrIdServer(identifier);
+  if (!item && typeof fetch !== 'undefined') {
+    try {
+      const { BACKEND_URL } = await import('@/lib/auth-client');
+      const { signJwtTokenServer } = await import('@/lib/server-auth');
+      const token = signJwtTokenServer({ sub: '00000000-0000-4000-a000-000000000001', role: 'admin' });
+      const res = await fetch(`${BACKEND_URL}/admin/tele-reports/${encodeURIComponent(identifier)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        item = await res.json();
+      }
+    } catch {
+      // ignore
+    }
+  }
   if (!item) {
     throw new Error('درخواست تله‌ریپورت یافت نشد.');
   }

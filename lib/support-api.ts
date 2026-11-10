@@ -5,7 +5,23 @@ import { BACKEND_URL, getStoredToken } from '@/lib/auth-client';
 export const SUPPORT_API = BACKEND_URL;
 
 function token(): string | null {
-  return getStoredToken();
+  const direct = getStoredToken();
+  if (direct) return direct;
+  if (typeof document !== 'undefined' && document.cookie) {
+    const keys = ['radinet_auth_token', 'radinet_token', 'token', 'auth_token'];
+    const parts = document.cookie.split('; ');
+    for (const part of parts) {
+      for (const k of keys) {
+        if (part.startsWith(`${k}=`)) {
+          const val = part.slice(k.length + 1);
+          if (val) {
+            try { return decodeURIComponent(val); } catch { return val; }
+          }
+        }
+      }
+    }
+  }
+  return null;
 }
 
 export async function supportRequest<T>(path: string, options: RequestInit = {}): Promise<T> {

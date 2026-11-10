@@ -97,37 +97,79 @@ export async function POST(req: Request) {
     const authorization = req.headers.get('authorization');
     const body = await req.json();
 
-    // 1. Sync to local database
-    let createdUser: any = null;
+    const normalizedEmail = (body.email?.trim() || '').toLowerCase();
+    const cleanFullName = body.fullName?.trim() || body.name?.trim() || 'کاربر جدید';
+    const role = body.role === 'doctor' ? 'radiologist' : body.role;
+    const specialty = body.specialty?.trim() || 'متخصص رادیولوژی و تله‌ریپورت';
+    const subSpecialty = body.subSpecialty?.trim() || 'تله‌رادیولوژی بالینی';
+
+    // 1. Send to NestJS backend first to establish the authoritative identity in PostgreSQL
+    let backendUser: any = null;
+    try {
+      const response = await fetch(`${backendUrl}/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authorization ? { Authorization: authorization } : {}),
+        },
+        body: JSON.stringify({
+          ...body,
+          role,
+          specialty,
+          subSpecialty,
+        }),
+        cache: 'no-store',
+      });
+      if (response.ok) {
+        backendUser = await response.json();
+      }
+    } catch {
+      // Backend offline, fallback to local createdUser below
+    }
+
+    // 2. Sync to local database cache using the SAME ID from backend if available
     try {
       const filePath = path.join(process.cwd(), 'data', 'radinet_db.json');
       const altPath = path.join(process.cwd(), 'frontend', 'data', 'radinet_db.json');
       const target = fs.existsSync(filePath) ? filePath : altPath;
       if (fs.existsSync(target)) {
         const parsed = JSON.parse(fs.readFileSync(target, 'utf-8'));
-        parsed.users = parsed.users || [];
-        const newId = `usr-${Date.now()}`;
-        createdUser = {
-          id: newId,
-          fullName: body.fullName?.trim() || body.name?.trim() || 'کاربر جدید',
-          email: body.email?.trim()?.toLowerCase() || '',
-          role: body.role === 'doctor' ? 'radiologist' : body.role,
-          status: body.status || 'active',
-          country: body.country || 'IR',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        parsed.users.unshift(createdUser);
+        parsed.users = Array.isArray(parsed.users) ? parsed.users : [];
+        parsed.doctorProfiles = Array.isArray(parsed.doctorProfiles) ? parsed.doctorProfiles : [];
 
-        if (body.role === 'radiologist' || body.role === 'doctor') {
-          parsed.doctorProfiles = parsed.doctorProfiles || [];
+        const finalUserId = backendUser?.id || `usr-${Date.now()}`;
+        const finalEmail = backendUser?.email?.toLowerCase() || normalizedEmail;
+        const finalFullName = backendUser?.fullName || cleanFullName;
+        const finalRole = backendUser?.role || role;
+
+        // Deduplicate: remove any conflicting prior entries by ID or email
+        parsed.users = parsed.users.filter(
+          (u: any) => u.id !== finalUserId && (!finalEmail || u.email?.toLowerCase() !== finalEmail)
+        );
+        parsed.doctorProfiles = parsed.doctorProfiles.filter(
+          (p: any) => p.userId !== finalUserId && (!finalEmail || p.email?.toLowerCase() !== finalEmail)
+        );
+
+        const localUserRecord = {
+          id: finalUserId,
+          fullName: finalFullName,
+          email: finalEmail,
+          role: finalRole,
+          status: backendUser?.status || body.status || 'active',
+          country: backendUser?.country || body.country || 'IR',
+          createdAt: backendUser?.createdAt || new Date().toISOString(),
+          updatedAt: backendUser?.updatedAt || new Date().toISOString(),
+        };
+        parsed.users.unshift(localUserRecord);
+
+        if (finalRole === 'radiologist' || finalRole === 'doctor') {
           parsed.doctorProfiles.push({
-            id: `doc-${newId}`,
-            userId: newId,
-            fullName: createdUser.fullName,
-            email: createdUser.email,
-            specialty: body.specialty?.trim() || 'متخصص رادیولوژی و تله‌ریپورت',
-            subSpecialty: body.subSpecialty?.trim() || 'تله‌رادیولوژی بالینی',
+            id: `doc-${finalUserId}`,
+            userId: finalUserId,
+            fullName: finalFullName,
+            email: finalEmail,
+            specialty,
+            subSpecialty,
             licenseNumber: body.licenseNumber?.trim() || '',
             workplace: body.workplace?.trim() || 'مرکز تله‌رادیولوژی رادینت',
             experienceYears: Number(body.experienceYears || 5),
@@ -139,37 +181,23 @@ export async function POST(req: Request) {
             education: body.education?.trim() || '',
             certifications: body.certifications?.trim() || '',
             languages: body.languages?.trim() || 'فارسی',
-            createdAt: createdUser.createdAt,
-            updatedAt: createdUser.updatedAt,
+            createdAt: localUserRecord.createdAt,
+            updatedAt: localUserRecord.updatedAt,
           });
         }
         fs.writeFileSync(target, JSON.stringify(parsed, null, 2), 'utf-8');
+
+        if (backendUser) {
+          return NextResponse.json(backendUser, { status: 201 });
+        }
+        return NextResponse.json(localUserRecord, { status: 201 });
       }
     } catch {
       // ignore
     }
 
-    // 2. Sync to NestJS backend if reachable
-    try {
-      const response = await fetch(`${backendUrl}/admin/users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authorization ? { Authorization: authorization } : {}),
-        },
-        body: JSON.stringify(body),
-        cache: 'no-store',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        return NextResponse.json(data, { status: response.status });
-      }
-    } catch {
-      // Backend offline, fallback to local createdUser
-    }
-
-    if (createdUser) {
-      return NextResponse.json(createdUser, { status: 201 });
+    if (backendUser) {
+      return NextResponse.json(backendUser, { status: 201 });
     }
     return NextResponse.json({ error: 'ثبت کاربر ناموفق بود.' }, { status: 500 });
   } catch (err: any) {

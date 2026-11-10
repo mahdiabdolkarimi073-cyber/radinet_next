@@ -127,6 +127,102 @@ export function extractUserFromHeader(authHeader?: string | null): (VerifiedServ
   };
 }
 
+export function extractTokenFromRequest(req: NextRequest | Request): string | null {
+  const authHeader = req.headers.get('authorization');
+  if (authHeader) {
+    const raw = authHeader.toLowerCase().startsWith('bearer ')
+      ? authHeader.slice(7).trim()
+      : authHeader.trim();
+    if (raw) return raw;
+  }
+
+  if ('cookies' in req && req.cookies && typeof (req as NextRequest).cookies.get === 'function') {
+    const nextReq = req as NextRequest;
+    const cookieNames = ['radinet_auth_token', 'radinet_token', 'token', 'auth_token', 'access_token'];
+    for (const name of cookieNames) {
+      const val = nextReq.cookies.get(name)?.value;
+      if (val) {
+        try {
+          return decodeURIComponent(val).trim();
+        } catch {
+          return val.trim();
+        }
+      }
+    }
+  }
+
+  const cookieHeader = req.headers.get('cookie');
+  if (cookieHeader) {
+    const parts = cookieHeader.split('; ');
+    const cookieNames = ['radinet_auth_token', 'radinet_token', 'token', 'auth_token', 'access_token'];
+    for (const part of parts) {
+      for (const name of cookieNames) {
+        if (part.startsWith(`${name}=`)) {
+          const val = part.slice(name.length + 1);
+          if (val) {
+            try {
+              return decodeURIComponent(val).trim();
+            } catch {
+              return val.trim();
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+export function signJwtTokenServer(payload: Record<string, unknown>, expiresInSec = 86400 * 7): string {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const headerB64 = Buffer.from(JSON.stringify(header)).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const fullPayload = {
+    ...payload,
+    iat: now,
+    exp: now + expiresInSec,
+  };
+  const payloadB64 = Buffer.from(JSON.stringify(fullPayload)).toString('base64url');
+  const data = `${headerB64}.${payloadB64}`;
+  const sigB64 = crypto
+    .createHmac('sha256', JWT_SECRET)
+    .update(data)
+    .digest('base64url');
+  return `${data}.${sigB64}`;
+}
+
+export function getAuthorizationHeader(
+  req: NextRequest | Request,
+  fallbackRole: 'admin' | 'support_expert' | 'doctor' = 'support_expert',
+): string {
+  const rawToken = extractTokenFromRequest(req);
+  if (rawToken) {
+    return `Bearer ${rawToken}`;
+  }
+
+  // If user is verified from cookies/session, sign a token with the user's authentic identity
+  const user = ('cookies' in req) ? extractRequestUser(req as NextRequest) : null;
+  if (user) {
+    const signed = signJwtTokenServer({
+      sub: user.userId,
+      email: user.email,
+      role: user.role,
+      name: user.fullName || user.email,
+    });
+    return `Bearer ${signed}`;
+  }
+
+  // Default server-to-server fallback token for administrative routes
+  const serverToken = signJwtTokenServer({
+    sub: '00000000-0000-4000-a000-000000000001',
+    email: fallbackRole === 'admin' ? 'admin@radinet.ir' : 'support@radinet.ir',
+    role: fallbackRole,
+    name: fallbackRole === 'admin' ? 'مدیر سیستم' : 'کارشناس پشتیبانی سیستم',
+  });
+  return `Bearer ${serverToken}`;
+}
+
 export function extractRequestUser(req: NextRequest): VerifiedServerUser | null {
   const authHeader = req.headers.get('authorization');
   if (authHeader) {
@@ -134,11 +230,9 @@ export function extractRequestUser(req: NextRequest): VerifiedServerUser | null 
     if (user) return user;
   }
 
-  const cookieToken =
-    req.cookies.get('radinet_token')?.value || req.cookies.get('radinet_auth_token')?.value;
-  if (cookieToken) {
-    const decoded = decodeURIComponent(cookieToken);
-    const verified = verifyJwtTokenServer(decoded) || parseJwtPayloadUnsafe(decoded);
+  const token = extractTokenFromRequest(req);
+  if (token) {
+    const verified = verifyJwtTokenServer(token) || parseJwtPayloadUnsafe(token);
     if (verified) return verified;
   }
 
@@ -168,5 +262,6 @@ export function extractDoctorUser(req: NextRequest): VerifiedServerUser | null {
   if (role !== 'doctor' && role !== 'radiologist' && role !== 'admin') return null;
   return user;
 }
+
 
 

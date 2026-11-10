@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { BACKEND_URL as backendUrl } from '@/lib/auth-client';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 import { listAdminTeleReportsServer } from '@/lib/tele-report-storage';
 
 export const dynamic = 'force-dynamic';
@@ -14,10 +15,10 @@ export async function GET(req: Request) {
 
   let backendData: any = null;
   try {
-    const authorization = req.headers.get('authorization');
+    const authHeader = getAuthorizationHeader(req, 'admin');
     const qs = searchParams.toString();
     const response = await fetch(`${backendUrl}/admin/tele-reports${qs ? `?${qs}` : ''}`, {
-      headers: authorization ? { Authorization: authorization } : {},
+      headers: { Authorization: authHeader },
       cache: 'no-store',
     });
     if (response.ok) {
@@ -55,7 +56,13 @@ export async function GET(req: Request) {
       const key = item.requestNumber || item.id;
       if (key) {
         if (map.has(key)) {
-          map.set(key, { ...map.get(key), ...item });
+          const backendItem = map.get(key);
+          map.set(key, {
+            ...item,
+            ...backendItem,
+            id: backendItem.id || item.id,
+            localId: item.id,
+          });
         } else {
           map.set(key, item);
         }

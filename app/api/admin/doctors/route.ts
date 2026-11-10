@@ -44,47 +44,12 @@ export async function GET(req: Request) {
   try {
     const localDoctors = await listRadiologistDoctorsServer();
     const map = new Map<string, any>();
+    const seenEmails = new Set<string>();
 
-    for (const d of localDoctors) {
-      const id = d.id || `doc-${d.userId}`;
-      map.set(d.userId, {
-        id,
-        userId: d.userId,
-        fullName: d.fullName || 'پزشک رادیولوژیست',
-        email: d.email || '',
-        specialty: d.specialty || 'متخصص رادیولوژی و تله‌ریپورت',
-        subSpecialty: d.subSpecialty || null,
-        licenseNumber: d.licenseNumber || null,
-        workplace: d.workplace || 'مرکز تله‌رادیولوژی رادینت',
-        experienceYears: d.experienceYears ?? 5,
-        maxDailyReports: d.maxDailyReports ?? 20,
-        tariff: d.tariff ?? 950000,
-        isActive: d.isActive !== false,
-        collaborationStatus: d.collaborationStatus || 'approved',
-        biography: d.biography || '',
-        education: d.education || '',
-        certifications: d.certifications || '',
-        languages: d.languages || 'فارسی',
-        avatarUrl: d.avatarUrl || null,
-        createdAt: d.createdAt || new Date().toISOString(),
-        updatedAt: d.updatedAt || new Date().toISOString(),
-        user: d.user || {
-          id: d.userId,
-          role: 'radiologist',
-          status: 'active',
-          country: 'IR',
-        },
-        stats: d.stats || {
-          totalReports: 0,
-          signedReports: 0,
-          completedReports: 0,
-          avgResponseHours: null,
-        },
-      });
-    }
-
+    // 1. Backend PostgreSQL doctors take absolute priority
     for (const d of backendItems) {
       const uid = d.userId || d.user?.id || d.id;
+      const email = (d.email || d.user?.email || '').trim().toLowerCase();
       if (uid && !map.has(uid)) {
         map.set(uid, {
           id: d.id || `doc-${uid}`,
@@ -92,7 +57,7 @@ export async function GET(req: Request) {
           fullName: d.fullName || d.user?.fullName || d.email || 'پزشک رادیولوژیست',
           email: d.email || d.user?.email || '',
           specialty: d.specialty || d.doctorProfile?.specialty || 'متخصص رادیولوژی و تله‌ریپورت',
-          subSpecialty: d.subSpecialty || d.doctorProfile?.subSpecialty || null,
+          subSpecialty: d.subSpecialty || d.doctorProfile?.subSpecialty || 'تله‌رادیولوژی بالینی',
           licenseNumber: d.licenseNumber || d.doctorProfile?.licenseNumber || null,
           workplace: d.workplace || d.doctorProfile?.workplace || 'مرکز تله‌رادیولوژی رادینت',
           experienceYears: d.experienceYears ?? d.doctorProfile?.experienceYears ?? 5,
@@ -120,6 +85,50 @@ export async function GET(req: Request) {
             avgResponseHours: null,
           },
         });
+        if (email) seenEmails.add(email);
+      }
+    }
+
+    // 2. Only add local doctors if neither userId nor email already exists in backend items
+    for (const d of localDoctors) {
+      const email = (d.email || '').trim().toLowerCase();
+      if (!map.has(d.userId) && (!email || !seenEmails.has(email))) {
+        const id = d.id || `doc-${d.userId}`;
+        map.set(d.userId, {
+          id,
+          userId: d.userId,
+          fullName: d.fullName || 'پزشک رادیولوژیست',
+          email: d.email || '',
+          specialty: d.specialty || 'متخصص رادیولوژی و تله‌ریپورت',
+          subSpecialty: d.subSpecialty || 'تله‌رادیولوژی بالینی',
+          licenseNumber: d.licenseNumber || null,
+          workplace: d.workplace || 'مرکز تله‌رادیولوژی رادینت',
+          experienceYears: d.experienceYears ?? 5,
+          maxDailyReports: d.maxDailyReports ?? 20,
+          tariff: d.tariff ?? 950000,
+          isActive: d.isActive !== false,
+          collaborationStatus: d.collaborationStatus || 'approved',
+          biography: d.biography || '',
+          education: d.education || '',
+          certifications: d.certifications || '',
+          languages: d.languages || 'فارسی',
+          avatarUrl: d.avatarUrl || null,
+          createdAt: d.createdAt || new Date().toISOString(),
+          updatedAt: d.updatedAt || new Date().toISOString(),
+          user: d.user || {
+            id: d.userId,
+            role: 'radiologist',
+            status: 'active',
+            country: 'IR',
+          },
+          stats: d.stats || {
+            totalReports: 0,
+            signedReports: 0,
+            completedReports: 0,
+            avgResponseHours: null,
+          },
+        });
+        if (email) seenEmails.add(email);
       }
     }
 

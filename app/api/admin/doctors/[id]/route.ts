@@ -163,9 +163,12 @@ export async function DELETE(req: Request) {
         }
       }
 
-      // Remove from profiles and users
+      // Remove doctor profile ONLY; keep User account intact in users collection!
       db.doctorProfiles = (db.doctorProfiles || []).filter((p: any) => p.id !== id && p.userId !== id && p.id !== targetDocId);
-      db.users = (db.users || []).filter((u: any) => u.id !== targetUserId && u.id !== id);
+      const targetUser = (db.users || []).find((u: any) => u.id === targetUserId || u.id === id);
+      if (targetUser) {
+        targetUser.role = 'user';
+      }
 
       fs.writeFileSync(dbFile, JSON.stringify(db, null, 2), 'utf-8');
       return NextResponse.json({ ok: true, message: 'پزشک رادیولوژیست با موفقیت از سیستم حذف شد.' });
