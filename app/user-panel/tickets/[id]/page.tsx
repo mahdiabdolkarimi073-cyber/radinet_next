@@ -118,7 +118,20 @@ export default function UserTicketDetailPage() {
 
   if (!ticket) return null;
 
-  const repliesList = Array.isArray(ticket.replies) ? ticket.replies : [];
+  const rawReplies = Array.isArray(ticket.replies) ? ticket.replies : [];
+  const repliesList: typeof rawReplies = [];
+  const seenReplyKeys = new Set<string>();
+  for (const r of rawReplies) {
+    const isUser = (r.author?.role || '').toLowerCase().includes('user') || r.author?.role === 'user';
+    const roleKey = isUser ? 'user' : 'support';
+    const idKey = r.id ? `id_${r.id}` : '';
+    const contentKey = `msg_${(r.message || '').trim()}_${roleKey}`;
+    if ((!idKey || !seenReplyKeys.has(idKey)) && !seenReplyKeys.has(contentKey)) {
+      if (idKey) seenReplyKeys.add(idKey);
+      seenReplyKeys.add(contentKey);
+      repliesList.push(r);
+    }
+  }
 
   return (
     <section className="up-page">

@@ -13,6 +13,7 @@ export async function GET(
     const { id } = await Promise.resolve(params);
     const authHeader = request.headers.get('authorization') ?? undefined;
 
+    let backendData: any = null;
     if (authHeader) {
       try {
         const backendRes = await fetch(`${BACKEND_URL}/panel/tickets/${id}`, {
@@ -20,8 +21,7 @@ export async function GET(
           cache: 'no-store',
         });
         if (backendRes.ok) {
-          const data = await backendRes.json();
-          return NextResponse.json(data);
+          backendData = await backendRes.json();
         }
       } catch {
         // Fallback to local storage
@@ -32,11 +32,64 @@ export async function GET(
     const user = extractUserFromHeader(authHeader);
 
     const localDetail = await getTicketDetailServer(id);
-    if (!localDetail) {
+    if (!backendData && !localDetail) {
       return NextResponse.json({ error: 'تیکت یافت نشد' }, { status: 404 });
     }
 
-    // Authorization check: User can only view their own ticket, support/admin can view all
+    // Format local replies
+    const localFormattedReplies = (localDetail?.replies || []).map((r: any) => {
+      const isUser = (r.author?.role || '').toLowerCase().includes('user') || r.author_role === 'user';
+      return {
+        id: r.id,
+        message: r.message,
+        createdAt: r.createdAt || r.created_at,
+        author: {
+          id: r.author?.id || r.author_id || '',
+          fullName: r.author?.fullName || r.author_name || (isUser ? 'کاربر' : 'پشتیبان رادینت'),
+          role: isUser ? 'user' : 'support_expert',
+        },
+      };
+    });
+
+    if (backendData) {
+      // Merge backend replies with any local replies (e.g. from support who replied via local storage)
+      const backendReplies = Array.isArray(backendData.replies) ? backendData.replies : [];
+
+      const normalizeRole = (role?: string): 'user' | 'support' => {
+        const r = (role || '').toLowerCase();
+        if (r.includes('user') || r.includes('patient')) return 'user';
+        return 'support';
+      };
+
+      const getReplyKey = (r: any) => {
+        const msg = (r.message || '').trim();
+        const role = normalizeRole(r.author?.role || r.authorRole || r.author_role);
+        return `${msg}_${role}`;
+      };
+
+      const seenIds = new Set(backendReplies.map((r: any) => String(r.id || '')));
+      const seenKeys = new Set(backendReplies.map(getReplyKey));
+
+      const mergedReplies = [...backendReplies];
+      for (const lr of localFormattedReplies) {
+        const key = getReplyKey(lr);
+        const idStr = String(lr.id || '');
+        if (!seenKeys.has(key) && (!idStr || !seenIds.has(idStr))) {
+          seenKeys.add(key);
+          if (idStr) seenIds.add(idStr);
+          mergedReplies.push(lr);
+        }
+      }
+
+      mergedReplies.sort(
+        (a: any, b: any) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+      );
+
+      backendData.replies = mergedReplies;
+      return NextResponse.json(backendData);
+    }
+
+    // Authorization check for localDetail
     if (user && user.role !== 'admin' && !user.role.startsWith('support')) {
       const isOwner =
         localDetail.userId === user.userId ||
@@ -47,7 +100,7 @@ export async function GET(
       }
     }
 
-    // Format for PanelTicketDetail
+    // Format for PanelTicketDetail from localDetail
     const formatted = {
       id: localDetail.id,
       trackingCode: localDetail.trackingCode,
@@ -58,16 +111,7 @@ export async function GET(
       status: localDetail.status || 'open',
       createdAt: localDetail.createdAt,
       updatedAt: localDetail.updatedAt,
-      replies: (localDetail.replies || []).map((r: any) => ({
-        id: r.id,
-        message: r.message,
-        createdAt: r.createdAt,
-        author: {
-          id: r.author?.id || '',
-          fullName: r.author?.fullName || 'پشتیبانی',
-          role: (r.author?.role || '').toLowerCase().includes('user') ? 'user' : 'support',
-        },
-      })),
+      replies: localFormattedReplies,
     };
 
     return NextResponse.json(formatted);

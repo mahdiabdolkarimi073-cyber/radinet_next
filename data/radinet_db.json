@@ -85,7 +85,18 @@
       "updatedAt": "2026-10-15T08:30:00.000Z"
     }
   ],
-  "teleReportRequests": [],
+  "teleReportRequests": [
+    {
+      "id": "test-req-1794291384629",
+      "requestNumber": "REQ-TEST-99",
+      "patientFirstName": "علی",
+      "patientLastName": "رضایی",
+      "status": "new",
+      "imagingType": "Brain MRI",
+      "assignedDoctorId": null,
+      "createdAt": "2026-11-10T06:16:24.629Z"
+    }
+  ],
   "doctors": [],
   "doctorProfiles": [
     {
@@ -108,6 +119,21 @@
       "languages": "فارسی، انگلیسی",
       "createdAt": "2026-10-20T10:00:00.000Z",
       "updatedAt": "2026-10-20T10:00:00.000Z"
+    },
+    {
+      "id": "doc-test-doc-user-1794291384629",
+      "userId": "test-doc-user-1794291384629",
+      "fullName": "دکتر تست رادیولوژیست",
+      "email": "dr.test@radinet.local",
+      "specialty": "متخصص رادیولوژی",
+      "subSpecialty": "نورورادیولوژی",
+      "licenseNumber": "998877",
+      "workplace": "بیمارستان رادینت",
+      "experienceYears": 8,
+      "maxDailyReports": 25,
+      "tariff": 1200000,
+      "isActive": true,
+      "collaborationStatus": "approved"
     }
   ],
   "imagingCenters": [
@@ -151,6 +177,13 @@
       "id": "usr-4",
       "email": "patient@radinet.ir",
       "role": "user",
+      "status": "active"
+    },
+    {
+      "id": "test-doc-user-1794291384629",
+      "fullName": "دکتر تست رادیولوژیست",
+      "email": "dr.test@radinet.local",
+      "role": "radiologist",
       "status": "active"
     }
   ],
@@ -1040,6 +1073,76 @@
       "createdAt": "2026-10-25T10:07:37.377Z"
     }
   ],
-  "radiologyReports": [],
-  "infoRequests": []
+  "radiologyReports": [
+    {
+      "id": "report-test-req-1794291384629",
+      "requestId": "test-req-1794291384629",
+      "authorId": null,
+      "status": "draft",
+      "findings": "",
+      "conclusion": "",
+      "signed": false,
+      "adminApprovalStatus": "pending",
+      "supportApprovalStatus": "pending",
+      "rejectReason": null,
+      "approvedById": null,
+      "approvedAt": null,
+      "approvalLogs": [],
+      "images": [],
+      "createdAt": "2026-11-10T06:16:24.630Z",
+      "updatedAt": "2026-11-10T06:16:24.630Z"
+    }
+  ],
+  "infoRequests": [],
+  "tickets": [
+    {
+      "id": "ticket-test-1794291384636",
+      "ticketNumber": "TKT-TEST",
+      "userId": "patient-123",
+      "subject": "پرسش درباره نوبت سونوگرافی",
+      "category": "general",
+      "priority": "normal",
+      "status": "in_progress",
+      "messages": [
+        {
+          "id": "msg-1",
+          "senderId": "patient-123",
+          "senderName": "بیمار تستی",
+          "senderRole": "patient",
+          "body": "سلام، زمان نوبت من کی هست؟",
+          "createdAt": "2026-11-10T06:16:24.636Z"
+        }
+      ],
+      "createdAt": "2026-11-10T06:16:24.636Z",
+      "updatedAt": "2026-11-10T06:16:24.636Z"
+    },
+    {
+      "id": "ticket-test-1794291397897",
+      "ticketNumber": "TKT-TEST",
+      "userId": "patient-123",
+      "subject": "پرسش درباره نوبت سونوگرافی",
+      "category": "general",
+      "priority": "normal",
+      "status": "in_progress",
+      "messages": [
+        {
+          "id": "msg-1",
+          "senderId": "patient-123",
+          "senderName": "بیمار تستی",
+          "senderRole": "patient",
+          "body": "سلام، زمان نوبت من کی هست؟",
+          "createdAt": "2026-11-10T06:16:37.897Z"
+        }
+      ],
+      "createdAt": "2026-11-10T06:16:37.897Z",
+      "updatedAt": "2026-11-10T06:16:37.897Z"
+    }
+  ],
+  "aiSettings": {
+    "aiAnalysisEnabled": true,
+    "aiPricingEnabled": true,
+    "suggestedPrice": 950000,
+    "currency": "IRR",
+    "updatedAt": "2026-11-10T07:08:01.822Z"
+  }
 }

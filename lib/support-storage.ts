@@ -426,7 +426,53 @@ export async function getTicketDetailServer(id: string): Promise<any | null> {
   const db = readDb();
   const list: SupportTicket[] = db.supportTickets || [];
   const ticket = list.find((t) => t.id === id || t.tracking_code === id);
-  if (!ticket) return null;
+  if (!ticket) {
+    const rawTickets: any[] = db.tickets || [];
+    const t = rawTickets.find((item) => item.id === id || item.ticketNumber === id || item.tracking_code === id);
+    if (t) {
+      const messages = Array.isArray(t.messages) ? t.messages : [];
+      const replies = Array.isArray(t.replies)
+        ? t.replies
+        : messages.slice(1).map((m: any) => ({
+            id: m.id,
+            ticket_id: t.id,
+            author_id: m.senderId,
+            author_name: m.senderName,
+            author_role: m.senderRole === 'support' ? 'support_expert' : m.senderRole === 'admin' ? 'admin' : 'user',
+            message: m.body,
+            created_at: m.createdAt,
+          }));
+      return {
+        id: t.id,
+        userId: t.userId || t.user_id,
+        trackingCode: t.ticketNumber || t.tracking_code || t.id,
+        subject: t.subject,
+        message: t.message || (messages[0]?.body) || '',
+        status: t.status,
+        priority: t.priority,
+        category: t.category,
+        createdAt: t.createdAt || t.created_at,
+        updatedAt: t.updatedAt || t.updated_at,
+        user: {
+          id: t.userId || t.user_id,
+          fullName: t.userName || t.user_name || 'کاربر',
+          email: t.userEmail || t.user_email || '',
+          phone: t.userPhone || t.user_phone || '',
+        },
+        replies: replies.map((r: any) => ({
+          id: r.id,
+          message: r.message,
+          createdAt: r.created_at,
+          author: {
+            id: r.author_id || '',
+            fullName: r.author_name,
+            role: r.author_role === 'support_expert' ? 'support_expert' : r.author_role === 'admin' ? 'admin' : 'user',
+          },
+        })),
+      };
+    }
+    return null;
+  }
 
   return {
     id: ticket.id,
@@ -485,9 +531,41 @@ export async function addTicketReplyServer(
   const db = readDb();
   const list: SupportTicket[] = db.supportTickets || [];
   const idx = list.findIndex((t) => t.id === ticketId || t.tracking_code === ticketId);
-  if (idx === -1) return null;
-
   const now = new Date().toISOString();
+
+  if (idx === -1) {
+    const rawTickets: any[] = db.tickets || [];
+    const tIdx = rawTickets.findIndex((t) => t.id === ticketId || t.ticketNumber === ticketId || t.tracking_code === ticketId);
+    if (tIdx !== -1) {
+      const reply: TicketReplyItem = {
+        id: `rep-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        ticket_id: rawTickets[tIdx].id,
+        author_id: authorId,
+        author_name: authorName.trim(),
+        author_role: authorRole,
+        message: message.trim(),
+        created_at: now,
+      };
+      rawTickets[tIdx].replies = rawTickets[tIdx].replies || [];
+      rawTickets[tIdx].replies.push(reply);
+      rawTickets[tIdx].messages = rawTickets[tIdx].messages || [];
+      rawTickets[tIdx].messages.push({
+        id: reply.id,
+        senderId: authorId || 'support',
+        senderName: authorName.trim(),
+        senderRole: authorRole === 'user' ? 'patient' : 'support',
+        body: message.trim(),
+        createdAt: now,
+      });
+      rawTickets[tIdx].updated_at = now;
+      rawTickets[tIdx].updatedAt = now;
+      db.tickets = rawTickets;
+      writeDb(db);
+      return reply;
+    }
+    return null;
+  }
+
   const reply: TicketReplyItem = {
     id: `rep-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     ticket_id: list[idx].id,

@@ -11,6 +11,9 @@ function getDbPath(): string {
   if (fs.existsSync(localData)) return localData;
   const frontendData = path.join(process.cwd(), 'frontend', 'data', 'radinet_db.json');
   if (fs.existsSync(frontendData)) return frontendData;
+  if (fs.existsSync(path.join(process.cwd(), 'frontend'))) {
+    return frontendData;
+  }
   return localData;
 }
 
@@ -214,6 +217,55 @@ export async function POST(req: Request) {
       });
       if (response.ok) {
         const data = await response.json();
+        const doc = data?.doctor || data;
+        const uid = doc?.userId || doc?.user?.id || doc?.id;
+        const did = doc?.id || `doc-${uid}`;
+        try {
+          const dbFile = getDbPath();
+          if (fs.existsSync(dbFile)) {
+            const db = JSON.parse(fs.readFileSync(dbFile, 'utf-8'));
+            db.users = Array.isArray(db.users) ? db.users : [];
+            db.doctorProfiles = Array.isArray(db.doctorProfiles) ? db.doctorProfiles : [];
+
+            if (!db.users.some((u: any) => u.id === uid)) {
+              db.users.push({
+                id: uid,
+                fullName: doc.fullName || fullName,
+                email: doc.email || email,
+                role: 'radiologist',
+                status: 'active',
+                country: 'IR',
+                createdAt: doc.createdAt || new Date().toISOString(),
+              });
+            }
+            if (!db.doctorProfiles.some((p: any) => p.id === did || p.userId === uid)) {
+              db.doctorProfiles.push({
+                id: did,
+                userId: uid,
+                fullName: doc.fullName || fullName,
+                email: doc.email || email,
+                specialty: doc.specialty || specialty,
+                subSpecialty: doc.subSpecialty || subSpecialty,
+                licenseNumber: doc.licenseNumber || licenseNumber,
+                workplace: doc.workplace || workplace,
+                experienceYears: doc.experienceYears ?? experienceYears,
+                maxDailyReports: doc.maxDailyReports ?? maxDailyReports,
+                tariff: doc.tariff ?? tariff,
+                isActive: doc.isActive !== false,
+                collaborationStatus: doc.collaborationStatus || 'approved',
+                biography: doc.biography || biography,
+                education: doc.education || education,
+                certifications: doc.certifications || certifications,
+                languages: doc.languages || languages,
+                createdAt: doc.createdAt || new Date().toISOString(),
+                updatedAt: doc.updatedAt || new Date().toISOString(),
+              });
+            }
+            fs.writeFileSync(dbFile, JSON.stringify(db, null, 2), 'utf-8');
+          }
+        } catch {
+          // Ignore sync failure
+        }
         return NextResponse.json(data, { status: 201 });
       }
     } catch {

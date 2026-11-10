@@ -24,10 +24,7 @@ export async function POST(
     const userName = user?.fullName || 'کاربر بیمار';
     const userId = user?.id || `usr-${Date.now()}`;
 
-    // 1. Persist locally to support storage
-    const localReply = await addTicketReplyServer(id, message.trim(), userName, 'user', userId);
-
-    // 2. Also forward to backend if available
+    // 1. Try forwarding to backend first if token available
     let backendReply: any = null;
     if (authHeader) {
       try {
@@ -46,6 +43,11 @@ export async function POST(
         // Ignore backend offline
       }
     }
+
+    // 2. Persist locally to support storage only if backend did not handle it
+    const localReply = !backendReply
+      ? await addTicketReplyServer(id, message.trim(), userName, 'user', userId)
+      : null;
 
     const result = backendReply || {
       id: localReply?.id || `rep-${Date.now()}`,

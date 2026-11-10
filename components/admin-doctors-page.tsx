@@ -534,6 +534,8 @@ function EditDoctorModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const [fullName, setFullName] = useState(doctor.fullName ?? '');
+  const [email, setEmail] = useState(doctor.email ?? '');
   const [specialty, setSpecialty] = useState(doctor.specialty);
   const [subSpecialty, setSubSpecialty] = useState(doctor.subSpecialty ?? '');
   const [licenseNumber, setLicenseNumber] = useState(doctor.licenseNumber ?? '');
@@ -563,6 +565,8 @@ function EditDoctorModal({
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
+          fullName: fullName.trim() || undefined,
+          email: email.trim() || undefined,
           specialty,
           subSpecialty: subSpecialty || null,
           licenseNumber: licenseNumber || null,
@@ -598,6 +602,16 @@ function EditDoctorModal({
           </button>
         </div>
         <form onSubmit={handleSubmit} className="admin-modal__form">
+          <div className="admin-modal__row">
+            <label>
+              <span>نام و نام خانوادگی پزشک</span>
+              <input value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="نام پزشک" />
+            </label>
+            <label>
+              <span>آدرس ایمیل</span>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ایمیل پزشک" />
+            </label>
+          </div>
           <div className="admin-modal__row">
             <label>
               <span>تخصص اصلی</span>

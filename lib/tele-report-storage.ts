@@ -1076,20 +1076,130 @@ export async function assignDoctorToTeleReportServer(
   }
 
   const doctors = await listRadiologistDoctorsServer();
-  const doctor = doctors.find(
+  const rawDocId = String(doctorId || '').trim();
+  const cleanDocId = rawDocId.startsWith('doc-') ? rawDocId.replace('doc-', '') : rawDocId;
+
+  let doctor = doctors.find(
     (d) =>
-      d.id === doctorId ||
-      d.userId === doctorId ||
-      d.id === `doc-${doctorId}` ||
-      `doc-${d.userId}` === doctorId,
+      d.id === rawDocId ||
+      d.id === cleanDocId ||
+      d.userId === rawDocId ||
+      d.userId === cleanDocId ||
+      d.id === `doc-${rawDocId}` ||
+      d.id === `doc-${cleanDocId}` ||
+      `doc-${d.userId}` === rawDocId ||
+      `doc-${d.userId}` === cleanDocId ||
+      d.user?.id === rawDocId ||
+      d.user?.id === cleanDocId ||
+      (d.email && (d.email.toLowerCase() === rawDocId.toLowerCase() || d.email.toLowerCase() === cleanDocId.toLowerCase())) ||
+      (d.fullName && (d.fullName.trim() === rawDocId || d.fullName.trim() === cleanDocId))
   );
+
+  // If not found in active list, check raw profiles and users in local database
+  if (!doctor) {
+    const rawProfile = (db.doctorProfiles || []).find((p: any) =>
+      p.id === rawDocId ||
+      p.id === cleanDocId ||
+      p.userId === rawDocId ||
+      p.userId === cleanDocId ||
+      p.id === `doc-${cleanDocId}` ||
+      p.id === `doc-${rawDocId}` ||
+      `doc-${p.userId}` === rawDocId ||
+      `doc-${p.userId}` === cleanDocId ||
+      (p.email && (p.email.toLowerCase() === rawDocId.toLowerCase() || p.email.toLowerCase() === cleanDocId.toLowerCase())) ||
+      (p.fullName && (p.fullName.trim() === rawDocId || p.fullName.trim() === cleanDocId))
+    );
+    if (rawProfile) {
+      doctor = {
+        ...rawProfile,
+        isActive: true,
+        collaborationStatus: 'approved',
+      };
+      rawProfile.isActive = true;
+      rawProfile.collaborationStatus = 'approved';
+    } else {
+      const isDocRole = (r?: string) => ['radiologist', 'doctor', 'RADIOLOGIST', 'DOCTOR'].includes(r || '');
+      const rawUser = (db.users || []).find((u: any) =>
+        (u.id === rawDocId ||
+         u.id === cleanDocId ||
+         `doc-${u.id}` === rawDocId ||
+         (u.email && (u.email.toLowerCase() === rawDocId.toLowerCase() || u.email.toLowerCase() === cleanDocId.toLowerCase())) ||
+         (u.fullName && (u.fullName.trim() === rawDocId || u.fullName.trim() === cleanDocId))) &&
+        isDocRole(u.role)
+      );
+      if (rawUser) {
+        doctor = {
+          id: `doc-${rawUser.id}`,
+          userId: rawUser.id,
+          fullName: rawUser.fullName || rawUser.name || 'پزشک رادیولوژیست',
+          email: rawUser.email || '',
+          specialty: rawUser.specialty || 'متخصص رادیولوژی و تله‌ریپورت',
+          subSpecialty: rawUser.subSpecialty || null,
+          licenseNumber: rawUser.licenseNumber || null,
+          workplace: rawUser.workplace || 'مرکز تله‌رادیولوژی رادینت',
+          experienceYears: 5,
+          maxDailyReports: 20,
+          tariff: 950000,
+          isActive: true,
+          collaborationStatus: 'approved',
+        };
+        db.doctorProfiles = db.doctorProfiles || [];
+        db.doctorProfiles.push(doctor);
+      }
+    }
+  }
+
+  // If still not found and backend is configured, attempt backend doctor lookup
+  if (!doctor && typeof fetch !== 'undefined') {
+    try {
+      const { BACKEND_URL } = await import('@/lib/auth-client');
+      const bRes = await fetch(`${BACKEND_URL}/support/telereports/doctors`).catch(() => null);
+      if (bRes && bRes.ok) {
+        const bList = await bRes.json().catch(() => []);
+        const bDoc = (Array.isArray(bList) ? bList : []).find(
+          (d: any) =>
+            d.id === rawDocId ||
+            d.userId === rawDocId ||
+            d.id === cleanDocId ||
+            d.userId === cleanDocId ||
+            (d.email && d.email.toLowerCase() === rawDocId.toLowerCase()) ||
+            (d.fullName && d.fullName.trim() === rawDocId)
+        );
+        if (bDoc) {
+          doctor = {
+            id: bDoc.id || `doc-${bDoc.userId}`,
+            userId: bDoc.userId || bDoc.id,
+            fullName: bDoc.fullName || 'پزشک رادیولوژیست',
+            email: bDoc.email || '',
+            specialty: bDoc.specialty || 'متخصص رادیولوژی و تله‌ریپورت',
+            subSpecialty: bDoc.subSpecialty || null,
+            licenseNumber: bDoc.licenseNumber || null,
+            workplace: bDoc.workplace || 'مرکز تله‌رادیولوژی رادینت',
+            experienceYears: bDoc.experienceYears ?? 5,
+            maxDailyReports: bDoc.maxDailyReports ?? 20,
+            tariff: bDoc.tariff ?? 950000,
+            isActive: true,
+            collaborationStatus: 'approved',
+          };
+          db.doctorProfiles = db.doctorProfiles || [];
+          if (!db.doctorProfiles.some((p: any) => p.userId === doctor?.userId)) {
+            db.doctorProfiles.push(doctor);
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   if (!doctor) {
     throw new Error('پزشک رادیولوژیست مورد نظر در دیتابیس یافت نشد.');
   }
 
+  const doctorUserId = doctor.userId || doctor.id;
   const nowIso = new Date().toISOString();
   const reqItem = requests[reqIdx];
-  reqItem.assignedDoctorId = doctor.userId;
+  reqItem.assignedDoctorId = doctorUserId;
   reqItem.assignedDoctorName = doctor.fullName;
   reqItem.status = 'assigned';
   reqItem.updatedAt = nowIso;
@@ -1097,8 +1207,8 @@ export async function assignDoctorToTeleReportServer(
 
   let report = reports.find((rep) => rep.requestId === reqItem.id);
   if (report) {
-    report.authorId = doctor.userId;
-    report.author = { id: doctor.userId, fullName: doctor.fullName, email: doctor.email };
+    report.authorId = doctorUserId;
+    report.author = { id: doctorUserId, fullName: doctor.fullName, email: doctor.email };
     if (report.status !== 'approved' && report.status !== 'pending_approval') {
       report.status = 'draft';
     }
