@@ -1,5 +1,122 @@
 [
   {
+    "id": "a2740ea1-c8f4-4831-bcb9-6d1706a320e4",
+    "requestId": "req_mwg9u8zw_iah5hvoytelf",
+    "source": "frontend-proxy",
+    "level": "INFO",
+    "operation": "LOGIN",
+    "method": "POST",
+    "routePath": "/api/auth/login",
+    "targetUrl": "http://localhost:4000/api/auth/login",
+    "statusCode": 200,
+    "durationMs": 214,
+    "backendReached": true,
+    "dtoValidationPassed": true,
+    "operationResult": "SUCCESS",
+    "connectionStatus": "CONNECTED",
+    "failureStage": "NONE",
+    "errorCategory": "NONE",
+    "errorMessage": null,
+    "maskedIdentifier": "d***r@r***t.com",
+    "responseType": "json",
+    "metadata": {
+      "responseKeys": [
+        "ok",
+        "statusCode",
+        "requestId",
+        "backendReached",
+        "token(redacted)",
+        "user"
+      ],
+      "payloadFields": [
+        "email",
+        "password"
+      ],
+      "code": null
+    },
+    "startedAt": "2026-11-14T10:37:11.615Z",
+    "completedAt": "2026-11-14T10:37:11.829Z",
+    "createdAt": "2026-11-14T10:37:11.830Z"
+  },
+  {
+    "id": "e64f9cf0-cd83-49b3-a0d1-624c97b1de59",
+    "requestId": "req_mwg9tg1w_60l5re32qfa3",
+    "source": "frontend-proxy",
+    "level": "INFO",
+    "operation": "LOGIN",
+    "method": "POST",
+    "routePath": "/api/auth/login",
+    "targetUrl": "http://localhost:4000/api/auth/login",
+    "statusCode": 200,
+    "durationMs": 166,
+    "backendReached": true,
+    "dtoValidationPassed": true,
+    "operationResult": "SUCCESS",
+    "connectionStatus": "CONNECTED",
+    "failureStage": "NONE",
+    "errorCategory": "NONE",
+    "errorMessage": null,
+    "maskedIdentifier": "s***t@r***t.com",
+    "responseType": "json",
+    "metadata": {
+      "responseKeys": [
+        "ok",
+        "statusCode",
+        "requestId",
+        "backendReached",
+        "token(redacted)",
+        "user"
+      ],
+      "payloadFields": [
+        "email",
+        "password"
+      ],
+      "code": null
+    },
+    "startedAt": "2026-11-14T10:36:34.099Z",
+    "completedAt": "2026-11-14T10:36:34.265Z",
+    "createdAt": "2026-11-14T10:36:34.267Z"
+  },
+  {
+    "id": "7b16a643-5034-4426-a51c-9029617253df",
+    "requestId": "req_mwg9rxjq_uepitkt1ct24",
+    "source": "frontend-proxy",
+    "level": "INFO",
+    "operation": "LOGIN",
+    "method": "POST",
+    "routePath": "/api/auth/login",
+    "targetUrl": "http://localhost:4000/api/auth/login",
+    "statusCode": 200,
+    "durationMs": 687,
+    "backendReached": true,
+    "dtoValidationPassed": true,
+    "operationResult": "SUCCESS",
+    "connectionStatus": "CONNECTED",
+    "failureStage": "NONE",
+    "errorCategory": "NONE",
+    "errorMessage": null,
+    "maskedIdentifier": "b***r@r***t.com",
+    "responseType": "json",
+    "metadata": {
+      "responseKeys": [
+        "ok",
+        "statusCode",
+        "requestId",
+        "backendReached",
+        "token(redacted)",
+        "user"
+      ],
+      "payloadFields": [
+        "email",
+        "password"
+      ],
+      "code": null
+    },
+    "startedAt": "2026-11-14T10:35:24.712Z",
+    "completedAt": "2026-11-14T10:35:25.399Z",
+    "createdAt": "2026-11-14T10:35:25.400Z"
+  },
+  {
     "id": "5355e753-836c-446b-aab6-67043888f5e7",
     "requestId": "req_mwg8xt3q_q9u2m78h5prc",
     "source": "frontend-proxy",
