@@ -3,6 +3,7 @@ import {
   adminCreateShopProductServer,
   adminListShopProductsServer,
 } from '@/lib/shop-storage';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,7 @@ export async function GET(req: Request) {
     const status = searchParams.get('status') || undefined;
     const sort = searchParams.get('sort') || undefined;
     const search = searchParams.get('search') || undefined;
+    const auth = getAuthorizationHeader(req, 'admin');
 
     const data = await adminListShopProductsServer({
       page,
@@ -24,7 +26,7 @@ export async function GET(req: Request) {
       status,
       sort,
       search,
-    });
+    }, auth);
 
     return NextResponse.json(data);
   } catch (error) {
@@ -36,7 +38,8 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const created = await adminCreateShopProductServer(body);
+    const auth = getAuthorizationHeader(req, 'admin');
+    const created = await adminCreateShopProductServer(body, auth);
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'ایجاد محصول با خطا مواجه شد.';

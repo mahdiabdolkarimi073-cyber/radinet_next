@@ -8,7 +8,7 @@ import {
   createSupportReviewServer,
   getApprovedSupportReviewsServer,
 } from '@/lib/shop-storage';
-import { extractRequestUser } from '@/lib/server-auth';
+import { extractRequestUser, getAuthorizationHeader } from '@/lib/server-auth';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -48,13 +48,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
+    const auth = req.headers.get('authorization') || getAuthorizationHeader(req);
     const created = await createSupportReviewServer({
       userId: authUser.userId,
       userName: authUser.fullName || 'کاربر رادینت',
       userEmail: authUser.email,
       rating: body?.rating,
       content: body?.content,
-    });
+    }, auth);
     return NextResponse.json(created, { status: 201 });
   } catch (err: any) {
     return NextResponse.json(

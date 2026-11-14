@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { extractAdminOrSupportUser } from '@/lib/server-auth';
+import { extractAdminOrSupportUser, getAuthorizationHeader } from '@/lib/server-auth';
 import { updateTeleReportStatusServer } from '@/lib/tele-report-storage';
 
 export const dynamic = 'force-dynamic';
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: { id: string } },
+  context: { params: Promise<{ id: string }> | { id: string } },
 ) {
   const actor = extractAdminOrSupportUser(req);
   if (!actor) {
@@ -14,9 +14,14 @@ export async function PATCH(
   }
 
   try {
-    const id = decodeURIComponent(context.params.id || '');
+    const resolved = await Promise.resolve(context.params);
+    const id = decodeURIComponent(resolved.id || '');
+    const auth = getAuthorizationHeader(req, 'support_expert');
     const body = await req.json();
-    const updated = updateTeleReportStatusServer(id, String(body?.status || 'new'));
+    const updated = await updateTeleReportStatusServer(id, String(body?.status || 'new'), {
+      scope: 'support',
+      auth,
+    });
     return NextResponse.json(updated);
   } catch (err: any) {
     return NextResponse.json(

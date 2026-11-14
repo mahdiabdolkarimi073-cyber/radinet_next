@@ -1,11 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getDoctorFinanceSummaryServer } from '@/lib/tele-report-storage';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const summary = await getDoctorFinanceSummaryServer();
+    const auth = getAuthorizationHeader(req, 'doctor');
+    const summary = await getDoctorFinanceSummaryServer(auth);
     return NextResponse.json(summary);
   } catch (err: any) {
     return NextResponse.json(

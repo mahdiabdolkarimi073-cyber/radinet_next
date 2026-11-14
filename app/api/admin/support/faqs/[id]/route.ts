@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { updateFaqServer, deleteFaqServer } from '@/lib/support-storage';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,8 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const updated = await updateFaqServer(id, body);
+    const auth = getAuthorizationHeader(request, 'support_expert');
+    const updated = await updateFaqServer(id, body, auth);
     if (!updated) {
       return NextResponse.json({ error: 'سوال مورد نظر یافت نشد.' }, { status: 404 });
     }
@@ -23,12 +25,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const deleted = await deleteFaqServer(id);
+    const auth = getAuthorizationHeader(request, 'support_expert');
+    const deleted = await deleteFaqServer(id, auth);
     if (!deleted) {
       return NextResponse.json({ error: 'سوال مورد نظر یافت نشد.' }, { status: 404 });
     }

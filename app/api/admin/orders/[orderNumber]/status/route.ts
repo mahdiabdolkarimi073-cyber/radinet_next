@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminUpdateOrderStatusServer } from '@/lib/shop-storage';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'وضعیت سفارش مشخص نشده است.' }, { status: 400 });
     }
 
-    const updated = await adminUpdateOrderStatusServer(orderNumber, status, trackingCode, paymentStatus);
+    const auth = getAuthorizationHeader(req, 'admin');
+    const updated = await adminUpdateOrderStatusServer(orderNumber, status, trackingCode, paymentStatus, auth);
     return NextResponse.json(updated);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'به‌روزرسانی وضعیت سفارش ناموفق بود.';

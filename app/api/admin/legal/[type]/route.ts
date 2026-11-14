@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { updateLegalDocumentAdmin } from '@/lib/legal-storage';
 import type { LegalDocumentType } from '@/lib/legal-data';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -17,10 +18,12 @@ export async function PATCH(
     }
 
     const body = await request.json();
+    const auth = getAuthorizationHeader(request, 'admin');
     const updated = await updateLegalDocumentAdmin(
       type as LegalDocumentType,
       body,
-      body.actor || 'مدیر سیستم'
+      body.actor || 'مدیر سیستم',
+      auth,
     );
 
     return NextResponse.json(updated);

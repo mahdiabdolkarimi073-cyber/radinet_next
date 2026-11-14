@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAllAboutContent, updateAboutContent } from '@/lib/about-data';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export async function GET() {
   try {
@@ -17,7 +18,8 @@ export async function POST(req: Request) {
     if (!body.key) {
       return NextResponse.json({ error: 'کلید محتوا الزامی است' }, { status: 400 });
     }
-    const updated = await updateAboutContent(body.key, body);
+    const auth = getAuthorizationHeader(req, 'admin');
+    const updated = await updateAboutContent(body.key, body, auth);
     return NextResponse.json(updated);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

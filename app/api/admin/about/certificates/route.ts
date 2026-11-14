@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { addCertificate, getAllCertificates } from '@/lib/about-data';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export async function GET() {
   try {
@@ -17,7 +18,8 @@ export async function POST(req: Request) {
     if (!body.title || !body.imageUrl) {
       return NextResponse.json({ error: 'عنوان و تصویر گواهینامه الزامی است' }, { status: 400 });
     }
-    const created = await addCertificate(body);
+    const auth = getAuthorizationHeader(req, 'admin');
+    const created = await addCertificate(body, auth);
     return NextResponse.json(created, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

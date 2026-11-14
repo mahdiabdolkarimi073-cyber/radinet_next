@@ -1,5 +1,4 @@
-import fs from 'fs';
-import path from 'path';
+import { BACKEND_URL as backendUrl } from './auth-client';
 import type {
   ContactData,
   ContactMessage,
@@ -10,319 +9,341 @@ import type {
 } from './contact-data';
 import { fallbackContactData } from './contact-data';
 
-function getDbFilePath(): string {
-  const localData = path.join(process.cwd(), 'data', 'radinet_db.json');
-  if (fs.existsSync(localData)) return localData;
-  const frontendData = path.join(process.cwd(), 'frontend', 'data', 'radinet_db.json');
-  if (fs.existsSync(frontendData)) return frontendData;
-  if (fs.existsSync(path.join(process.cwd(), 'frontend'))) {
-    return frontendData;
-  }
-  return localData;
+function mapPage(page: any): ContactPageContent {
+  return {
+    id: page?.id || 'contact-page',
+    hero_title: page?.heroTitle || fallbackContactData.page?.hero_title || 'تماس با ما',
+    hero_subtitle: page?.heroSubtitle || fallbackContactData.page?.hero_subtitle || '',
+    intro_title: page?.introTitle || fallbackContactData.page?.intro_title || '',
+    intro_body: page?.introBody || fallbackContactData.page?.intro_body || '',
+    office_address: page?.officeAddress || fallbackContactData.page?.office_address || '',
+    latitude: page?.latitude !== null && page?.latitude !== undefined ? Number(page.latitude) : 35.7575,
+    longitude: page?.longitude !== null && page?.longitude !== undefined ? Number(page.longitude) : 51.4106,
+    map_url: page?.mapUrl || null,
+    response_hours: page?.responseHours || fallbackContactData.page?.response_hours || '',
+  };
 }
 
-const initialContactPage: ContactPageContent = {
-  id: 'contact-page-1',
-  hero_title: 'تماس با ما',
-  hero_subtitle: 'با کارشناسان و متخصصان رادینت در ارتباط باشید',
-  intro_title: 'راه‌های ارتباطی با رادینت',
-  intro_body: 'تیم پشتیبانی و کارشناسان فنی رادینت همواره آماده پاسخگویی به پرسش‌ها، ارائه مشاوره تخصصی تله‌رادیولوژی و پیگیری درخواست‌های مراکز درمانی و همکاران گرامی هستند.',
-  office_address: 'تهران، خیابان ولیعصر، بالاتر از میدان ونک، برج نگار، طبقه ۱۰، واحد ۴',
-  latitude: 35.7575,
-  longitude: 51.4106,
-  map_url: null,
-  response_hours: 'شنبه تا چهارشنبه ۸:۰۰ الی ۱۷:۰۰ | پنج‌شنبه‌ها ۸:۰۰ الی ۱۳:۰۰',
-};
-
-const initialPhoneNumbers: ContactPhoneNumber[] = [
-  { id: 'phone-1', label: 'پشتیبانی فنی و تله‌ریپورت', phone: '۰۲۱-۸۸۸۸۱۹۲۰', is_active: true, display_order: 1 },
-  { id: 'phone-2', label: 'واحد فروش و امور قراردادها', phone: '۰۲۱-۸۸۸۸۱۹۲۱', is_active: true, display_order: 2 },
-  { id: 'phone-3', label: 'خط ویژه مراکز درمانی', phone: '۰۹۱۲۰۰۰۰۰۰۰', is_active: true, display_order: 3 },
-];
-
-const initialSupportEmails: ContactSupportEmail[] = [
-  { id: 'email-1', label: 'پشتیبانی و تیکت‌ها', email: 'support@radinet.ir', is_active: true, display_order: 1 },
-  { id: 'email-2', label: 'امور همکاری و بازرگانی', email: 'info@radinet.ir', is_active: true, display_order: 2 },
-  { id: 'email-3', label: 'مدیریت تله‌رادیولوژی', email: 'telerad@radinet.ir', is_active: true, display_order: 3 },
-];
-
-const initialResponseHours: ContactResponseHour[] = [
-  { id: 'hour-1', day_label: 'شنبه تا چهارشنبه', hours: '۸:۰۰ الی ۱۷:۰۰', is_active: true, display_order: 1 },
-  { id: 'hour-2', day_label: 'پنج‌شنبه‌ها', hours: '۸:۰۰ الی ۱۳:۰۰', is_active: true, display_order: 2 },
-  { id: 'hour-3', day_label: 'جمعه‌ها و ایام تعطیل', hours: 'پشتیبانی آنلاین تله‌ریپورت اورژانس ۲۴/۷', is_active: true, display_order: 3 },
-];
-
-const initialContactMessages: ContactMessage[] = [
-  {
-    id: 'msg-1',
-    name: 'دکتر حمید کاظمی',
-    email: 'h.kazemi@clinic-sample.ir',
-    phone: '۰۹۱۲۳۴۵۶۷۸۹',
-    subject: 'درخواست راه‌اندازی سرویس تفسیر آنلاین سی‌تی‌اسکن',
-    message: 'با سلام، مرکز تصویربرداری ما در شهرستان سمنان مایل به عقد قرارداد تله‌رادیولوژی جهت گزارش‌نویسی تصاویر CT و MRI به صورت شبانه‌روزی می‌باشد. لطفا شرایط و تعرفه‌ها را ارسال فرمایید.',
-    status: 'new',
-    created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
-  },
-  {
-    id: 'msg-2',
-    name: 'سارا معتمدی',
-    email: 'sara.motamedi@yahoo.com',
-    phone: '۰۹۱۹۱۱۱۴۴۵۵',
-    subject: 'پیگیری جواب گزارش سونوگرافی',
-    message: 'سلام خسته نباشید، کد رهگیری گزارش رادیولوژی بنده صادر شده اما فایل PDF دانلود نمی‌شود. ممنون می‌شوم راهنمایی بفرمایید.',
-    status: 'answered',
-    created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
-  },
-];
-
-function readDb(): any {
-  const filePath = getDbFilePath();
-  const dir = path.dirname(filePath);
-  try {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    if (!fs.existsSync(filePath)) {
-      const initial = {
-        contactPageContent: initialContactPage,
-        contactPhoneNumbers: initialPhoneNumbers,
-        contactSupportEmails: initialSupportEmails,
-        contactResponseHours: initialResponseHours,
-        contactMessages: initialContactMessages,
-      };
-      fs.writeFileSync(filePath, JSON.stringify(initial, null, 2), 'utf-8');
-      return initial;
-    }
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    const db = JSON.parse(raw);
-    let changed = false;
-
-    if (!db.contactPageContent) {
-      db.contactPageContent = initialContactPage;
-      changed = true;
-    }
-    if (!db.contactPhoneNumbers || !Array.isArray(db.contactPhoneNumbers)) {
-      db.contactPhoneNumbers = initialPhoneNumbers;
-      changed = true;
-    }
-    if (!db.contactSupportEmails || !Array.isArray(db.contactSupportEmails)) {
-      db.contactSupportEmails = initialSupportEmails;
-      changed = true;
-    }
-    if (!db.contactResponseHours || !Array.isArray(db.contactResponseHours)) {
-      db.contactResponseHours = initialResponseHours;
-      changed = true;
-    }
-    if (!db.contactMessages || !Array.isArray(db.contactMessages)) {
-      db.contactMessages = initialContactMessages;
-      changed = true;
-    }
-
-    if (changed) {
-      fs.writeFileSync(filePath, JSON.stringify(db, null, 2), 'utf-8');
-    }
-    return db;
-  } catch (err) {
-    console.error('Error in readDb (contact-storage):', err);
-    return {
-      contactPageContent: initialContactPage,
-      contactPhoneNumbers: initialPhoneNumbers,
-      contactSupportEmails: initialSupportEmails,
-      contactResponseHours: initialResponseHours,
-      contactMessages: initialContactMessages,
-    };
-  }
+function mapPhone(p: any): ContactPhoneNumber {
+  return {
+    id: p.id,
+    label: p.label,
+    phone: p.phone,
+    is_active: p.isActive !== false,
+    display_order: Number(p.displayOrder ?? 0),
+  };
 }
 
-function writeDb(db: any) {
-  const filePath = getDbFilePath();
-  const dir = path.dirname(filePath);
-  try {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(filePath, JSON.stringify(db, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('Error writing radinet_db.json:', err);
-  }
+function mapEmail(e: any): ContactSupportEmail {
+  return {
+    id: e.id,
+    label: e.label,
+    email: e.email,
+    is_active: e.isActive !== false,
+    display_order: Number(e.displayOrder ?? 0),
+  };
 }
 
-// ── Public Getters ──
+function mapHour(h: any): ContactResponseHour {
+  return {
+    id: h.id,
+    day_label: h.dayLabel,
+    hours: h.hours,
+    is_active: h.isActive !== false,
+    display_order: Number(h.displayOrder ?? 0),
+  };
+}
+
+function mapMessage(m: any): ContactMessage {
+  return {
+    id: m.id,
+    name: m.name,
+    email: m.email,
+    phone: m.phone,
+    subject: m.subject,
+    message: m.message,
+    status: m.status,
+    created_at: m.createdAt,
+  };
+}
 
 export async function getContactDataServer(): Promise<ContactData> {
-  const db = readDb();
-  const page: ContactPageContent = db.contactPageContent || initialContactPage;
-  const phones: ContactPhoneNumber[] = (db.contactPhoneNumbers || initialPhoneNumbers)
-    .filter((p: ContactPhoneNumber) => p.is_active)
-    .sort((a: ContactPhoneNumber, b: ContactPhoneNumber) => (a.display_order ?? 0) - (b.display_order ?? 0));
-  const emails: ContactSupportEmail[] = (db.contactSupportEmails || initialSupportEmails)
-    .filter((e: ContactSupportEmail) => e.is_active)
-    .sort((a: ContactSupportEmail, b: ContactSupportEmail) => (a.display_order ?? 0) - (b.display_order ?? 0));
-  const hours: ContactResponseHour[] = (db.contactResponseHours || initialResponseHours)
-    .filter((h: ContactResponseHour) => h.is_active)
-    .sort((a: ContactResponseHour, b: ContactResponseHour) => (a.display_order ?? 0) - (b.display_order ?? 0));
+  try {
+    const res = await fetch(`${backendUrl}/contact`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      const phones = Array.isArray(data.phones) ? data.phones.map(mapPhone) : [];
+      const emails = Array.isArray(data.emails) ? data.emails.map(mapEmail) : [];
+      const hours = Array.isArray(data.hours) ? data.hours.map(mapHour) : [];
 
+      return {
+        page: mapPage(data.page),
+        phones,
+        emails,
+        hours,
+      };
+    }
+  } catch (err) {
+    console.error('Error fetching contact data from backend:', err);
+  }
+  return fallbackContactData;
+}
+
+export async function getAdminContactData(auth?: string): Promise<ContactData & { messages: ContactMessage[] }> {
+  const [contact, messages] = await Promise.all([
+    getContactDataServer(),
+    listContactMessages(auth),
+  ]);
   return {
-    page,
-    phones: phones.length ? phones : fallbackContactData.phones,
-    emails: emails.length ? emails : fallbackContactData.emails,
-    hours: hours.length ? hours : fallbackContactData.hours,
+    ...contact,
+    messages,
   };
 }
 
-// ── Admin Getters ──
+export async function updateContactPage(
+  data: Partial<ContactPageContent>,
+  auth?: string,
+): Promise<ContactPageContent | null> {
+  try {
+    const payload: Record<string, unknown> = {};
+    if (data.hero_title !== undefined) payload.heroTitle = data.hero_title;
+    if (data.hero_subtitle !== undefined) payload.heroSubtitle = data.hero_subtitle;
+    if (data.intro_title !== undefined) payload.introTitle = data.intro_title;
+    if (data.intro_body !== undefined) payload.introBody = data.intro_body;
+    if (data.office_address !== undefined) payload.officeAddress = data.office_address;
+    if (data.latitude !== undefined && data.latitude !== null) payload.latitude = Number(data.latitude);
+    if (data.longitude !== undefined && data.longitude !== null) payload.longitude = Number(data.longitude);
+    if (data.map_url !== undefined && data.map_url !== null) payload.mapUrl = data.map_url;
+    if (data.response_hours !== undefined) payload.responseHours = data.response_hours;
 
-export async function getAdminContactData() {
-  const db = readDb();
-  return {
-    page: db.contactPageContent || initialContactPage,
-    phones: (db.contactPhoneNumbers || initialPhoneNumbers).sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)),
-    emails: (db.contactSupportEmails || initialSupportEmails).sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)),
-    hours: (db.contactResponseHours || initialResponseHours).sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)),
-    messages: (db.contactMessages || initialContactMessages).sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-  };
-}
-
-// ── Page Content Updates ──
-
-export async function updateContactPageContent(data: Partial<ContactPageContent>): Promise<ContactPageContent> {
-  const db = readDb();
-  const current: ContactPageContent = db.contactPageContent || initialContactPage;
-  const updated: ContactPageContent = {
-    ...current,
-    ...data,
-    latitude: data.latitude !== undefined ? Number(data.latitude) : current.latitude,
-    longitude: data.longitude !== undefined ? Number(data.longitude) : current.longitude,
-  };
-  db.contactPageContent = updated;
-  writeDb(db);
-  return updated;
-}
-
-// ── Phone Numbers Operations ──
-
-export async function createPhoneNumber(item: Omit<ContactPhoneNumber, 'id'>): Promise<ContactPhoneNumber> {
-  const db = readDb();
-  const newPhone: ContactPhoneNumber = {
-    id: `phone-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    label: item.label.trim(),
-    phone: item.phone.trim(),
-    is_active: item.is_active !== undefined ? item.is_active : true,
-    display_order: Number(item.display_order ?? (db.contactPhoneNumbers?.length || 0) + 1),
-  };
-  db.contactPhoneNumbers = db.contactPhoneNumbers || [];
-  db.contactPhoneNumbers.push(newPhone);
-  writeDb(db);
-  return newPhone;
-}
-
-export async function updatePhoneNumber(id: string, data: Partial<ContactPhoneNumber>): Promise<ContactPhoneNumber | null> {
-  const db = readDb();
-  const list: ContactPhoneNumber[] = db.contactPhoneNumbers || [];
-  const idx = list.findIndex((p) => p.id === id);
-  if (idx === -1) return null;
-  const updated = { ...list[idx], ...data };
-  if (data.display_order !== undefined) updated.display_order = Number(data.display_order);
-  list[idx] = updated;
-  db.contactPhoneNumbers = list;
-  writeDb(db);
-  return updated;
-}
-
-export async function deletePhoneNumber(id: string): Promise<boolean> {
-  const db = readDb();
-  const initialLen = db.contactPhoneNumbers?.length || 0;
-  db.contactPhoneNumbers = (db.contactPhoneNumbers || []).filter((p: any) => p.id !== id);
-  if (db.contactPhoneNumbers.length !== initialLen) {
-    writeDb(db);
-    return true;
+    const res = await fetch(`${backendUrl}/contact/page`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth ? { Authorization: auth } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      return mapPage(await res.json());
+    }
+  } catch (err) {
+    console.error('Error updating contact page in backend:', err);
   }
-  return false;
+  return null;
 }
 
-// ── Support Emails Operations ──
+export const updateContactPageContent = updateContactPage;
 
-export async function createSupportEmail(item: Omit<ContactSupportEmail, 'id'>): Promise<ContactSupportEmail> {
-  const db = readDb();
-  const newEmail: ContactSupportEmail = {
-    id: `email-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    label: item.label.trim(),
-    email: item.email.trim(),
-    is_active: item.is_active !== undefined ? item.is_active : true,
-    display_order: Number(item.display_order ?? (db.contactSupportEmails?.length || 0) + 1),
-  };
-  db.contactSupportEmails = db.contactSupportEmails || [];
-  db.contactSupportEmails.push(newEmail);
-  writeDb(db);
-  return newEmail;
-}
-
-export async function updateSupportEmail(id: string, data: Partial<ContactSupportEmail>): Promise<ContactSupportEmail | null> {
-  const db = readDb();
-  const list: ContactSupportEmail[] = db.contactSupportEmails || [];
-  const idx = list.findIndex((e) => e.id === id);
-  if (idx === -1) return null;
-  const updated = { ...list[idx], ...data };
-  if (data.display_order !== undefined) updated.display_order = Number(data.display_order);
-  list[idx] = updated;
-  db.contactSupportEmails = list;
-  writeDb(db);
-  return updated;
-}
-
-export async function deleteSupportEmail(id: string): Promise<boolean> {
-  const db = readDb();
-  const initialLen = db.contactSupportEmails?.length || 0;
-  db.contactSupportEmails = (db.contactSupportEmails || []).filter((e: any) => e.id !== id);
-  if (db.contactSupportEmails.length !== initialLen) {
-    writeDb(db);
-    return true;
+export async function addPhoneNumber(
+  data: Partial<ContactPhoneNumber>,
+  auth?: string,
+): Promise<ContactPhoneNumber | null> {
+  try {
+    const res = await fetch(`${backendUrl}/contact/phones`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth ? { Authorization: auth } : {}),
+      },
+      body: JSON.stringify({
+        label: data.label,
+        phone: data.phone,
+        isActive: data.is_active ?? true,
+        displayOrder: Number(data.display_order ?? 0),
+      }),
+    });
+    if (res.ok) {
+      return mapPhone(await res.json());
+    }
+  } catch (err) {
+    console.error('Error adding phone number:', err);
   }
-  return false;
+  return null;
 }
 
-// ── Response Hours Operations ──
+export const createPhoneNumber = addPhoneNumber;
 
-export async function createResponseHour(item: Omit<ContactResponseHour, 'id'>): Promise<ContactResponseHour> {
-  const db = readDb();
-  const newHour: ContactResponseHour = {
-    id: `hour-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    day_label: item.day_label.trim(),
-    hours: item.hours.trim(),
-    is_active: item.is_active !== undefined ? item.is_active : true,
-    display_order: Number(item.display_order ?? (db.contactResponseHours?.length || 0) + 1),
-  };
-  db.contactResponseHours = db.contactResponseHours || [];
-  db.contactResponseHours.push(newHour);
-  writeDb(db);
-  return newHour;
-}
+export async function updatePhoneNumber(
+  id: string,
+  data: Partial<ContactPhoneNumber>,
+  auth?: string,
+): Promise<ContactPhoneNumber | null> {
+  try {
+    const payload: Record<string, unknown> = {};
+    if (data.label !== undefined) payload.label = data.label;
+    if (data.phone !== undefined) payload.phone = data.phone;
+    if (data.is_active !== undefined) payload.isActive = data.is_active;
+    if (data.display_order !== undefined) payload.displayOrder = Number(data.display_order);
 
-export async function updateResponseHour(id: string, data: Partial<ContactResponseHour>): Promise<ContactResponseHour | null> {
-  const db = readDb();
-  const list: ContactResponseHour[] = db.contactResponseHours || [];
-  const idx = list.findIndex((h) => h.id === id);
-  if (idx === -1) return null;
-  const updated = { ...list[idx], ...data };
-  if (data.display_order !== undefined) updated.display_order = Number(data.display_order);
-  list[idx] = updated;
-  db.contactResponseHours = list;
-  writeDb(db);
-  return updated;
-}
-
-export async function deleteResponseHour(id: string): Promise<boolean> {
-  const db = readDb();
-  const initialLen = db.contactResponseHours?.length || 0;
-  db.contactResponseHours = (db.contactResponseHours || []).filter((h: any) => h.id !== id);
-  if (db.contactResponseHours.length !== initialLen) {
-    writeDb(db);
-    return true;
+    const res = await fetch(`${backendUrl}/contact/phones/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth ? { Authorization: auth } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      return mapPhone(await res.json());
+    }
+  } catch (err) {
+    console.error('Error updating phone number:', err);
   }
-  return false;
+  return null;
 }
 
-// ── Contact Messages Operations ──
+export async function deletePhoneNumber(id: string, auth?: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${backendUrl}/contact/phones/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: auth ? { Authorization: auth } : {},
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function addSupportEmail(
+  data: Partial<ContactSupportEmail>,
+  auth?: string,
+): Promise<ContactSupportEmail | null> {
+  try {
+    const res = await fetch(`${backendUrl}/contact/emails`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth ? { Authorization: auth } : {}),
+      },
+      body: JSON.stringify({
+        label: data.label,
+        email: data.email,
+        isActive: data.is_active ?? true,
+        displayOrder: Number(data.display_order ?? 0),
+      }),
+    });
+    if (res.ok) {
+      return mapEmail(await res.json());
+    }
+  } catch (err) {
+    console.error('Error adding email:', err);
+  }
+  return null;
+}
+
+export const createSupportEmail = addSupportEmail;
+
+export async function updateSupportEmail(
+  id: string,
+  data: Partial<ContactSupportEmail>,
+  auth?: string,
+): Promise<ContactSupportEmail | null> {
+  try {
+    const payload: Record<string, unknown> = {};
+    if (data.label !== undefined) payload.label = data.label;
+    if (data.email !== undefined) payload.email = data.email;
+    if (data.is_active !== undefined) payload.isActive = data.is_active;
+    if (data.display_order !== undefined) payload.displayOrder = Number(data.display_order);
+
+    const res = await fetch(`${backendUrl}/contact/emails/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth ? { Authorization: auth } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      return mapEmail(await res.json());
+    }
+  } catch (err) {
+    console.error('Error updating email:', err);
+  }
+  return null;
+}
+
+export async function deleteSupportEmail(id: string, auth?: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${backendUrl}/contact/emails/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: auth ? { Authorization: auth } : {},
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function addResponseHour(
+  data: Partial<ContactResponseHour>,
+  auth?: string,
+): Promise<ContactResponseHour | null> {
+  try {
+    const res = await fetch(`${backendUrl}/contact/hours`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth ? { Authorization: auth } : {}),
+      },
+      body: JSON.stringify({
+        dayLabel: data.day_label,
+        hours: data.hours,
+        isActive: data.is_active ?? true,
+        displayOrder: Number(data.display_order ?? 0),
+      }),
+    });
+    if (res.ok) {
+      return mapHour(await res.json());
+    }
+  } catch (err) {
+    console.error('Error adding response hour:', err);
+  }
+  return null;
+}
+
+export const createResponseHour = addResponseHour;
+
+export async function updateResponseHour(
+  id: string,
+  data: Partial<ContactResponseHour>,
+  auth?: string,
+): Promise<ContactResponseHour | null> {
+  try {
+    const payload: Record<string, unknown> = {};
+    if (data.day_label !== undefined) payload.dayLabel = data.day_label;
+    if (data.hours !== undefined) payload.hours = data.hours;
+    if (data.is_active !== undefined) payload.isActive = data.is_active;
+    if (data.display_order !== undefined) payload.displayOrder = Number(data.display_order);
+
+    const res = await fetch(`${backendUrl}/contact/hours/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth ? { Authorization: auth } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      return mapHour(await res.json());
+    }
+  } catch (err) {
+    console.error('Error updating response hour:', err);
+  }
+  return null;
+}
+
+export async function deleteResponseHour(id: string, auth?: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${backendUrl}/contact/hours/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: auth ? { Authorization: auth } : {},
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 export async function createContactMessage(input: {
   name: string;
@@ -330,49 +351,69 @@ export async function createContactMessage(input: {
   phone: string;
   subject: string;
   message: string;
-}): Promise<ContactMessage> {
-  const db = readDb();
-  const newMsg: ContactMessage = {
-    id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    name: input.name.trim(),
-    email: input.email.trim(),
-    phone: input.phone.trim(),
-    subject: input.subject.trim(),
-    message: input.message.trim(),
-    status: 'new',
-    created_at: new Date().toISOString(),
-  };
-  db.contactMessages = db.contactMessages || [];
-  db.contactMessages.unshift(newMsg);
-  writeDb(db);
-  return newMsg;
-}
-
-export async function listContactMessages(): Promise<ContactMessage[]> {
-  const db = readDb();
-  return (db.contactMessages || []).sort(
-    (a: ContactMessage, b: ContactMessage) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-}
-
-export async function updateContactMessageStatus(id: string, status: string): Promise<ContactMessage | null> {
-  const db = readDb();
-  const list: ContactMessage[] = db.contactMessages || [];
-  const idx = list.findIndex((m) => m.id === id);
-  if (idx === -1) return null;
-  list[idx].status = status;
-  db.contactMessages = list;
-  writeDb(db);
-  return list[idx];
-}
-
-export async function deleteContactMessage(id: string): Promise<boolean> {
-  const db = readDb();
-  const initialLen = db.contactMessages?.length || 0;
-  db.contactMessages = (db.contactMessages || []).filter((m: any) => m.id !== id);
-  if (db.contactMessages.length !== initialLen) {
-    writeDb(db);
-    return true;
+}): Promise<ContactMessage | null> {
+  try {
+    const res = await fetch(`${backendUrl}/contact/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    });
+    if (res.ok) {
+      return mapMessage(await res.json());
+    }
+  } catch (err) {
+    console.error('Error submitting contact message to backend:', err);
   }
-  return false;
+  return null;
+}
+
+export async function listContactMessages(auth?: string): Promise<ContactMessage[]> {
+  try {
+    const res = await fetch(`${backendUrl}/contact/messages`, {
+      headers: auth ? { Authorization: auth } : {},
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const list = await res.json();
+      return (list || []).map(mapMessage);
+    }
+  } catch (err) {
+    console.error('Error listing contact messages:', err);
+  }
+  return [];
+}
+
+export async function updateContactMessageStatus(
+  id: string,
+  status: string,
+  auth?: string,
+): Promise<ContactMessage | null> {
+  try {
+    const res = await fetch(`${backendUrl}/contact/messages/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth ? { Authorization: auth } : {}),
+      },
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) {
+      return mapMessage(await res.json());
+    }
+  } catch (err) {
+    console.error('Error updating contact message status:', err);
+  }
+  return null;
+}
+
+export async function deleteContactMessage(id: string, auth?: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${backendUrl}/contact/messages/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: auth ? { Authorization: auth } : {},
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }

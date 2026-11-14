@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const config = getShopCartConfigServer();
+    const config = await getShopCartConfigServer();
     return NextResponse.json(config);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'خطا در دریافت تنظیمات سبد خرید';

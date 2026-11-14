@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDoctorDashboardServer } from '@/lib/tele-report-storage';
-import { extractRequestUser } from '@/lib/server-auth';
+import { extractRequestUser, getAuthorizationHeader } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
     const user = extractRequestUser(req);
-    const data = await getDoctorDashboardServer(user?.userId);
+    const auth = getAuthorizationHeader(req, 'doctor');
+    const data = await getDoctorDashboardServer(user?.userId, auth);
     return NextResponse.json(data);
   } catch (err: any) {
     return NextResponse.json(

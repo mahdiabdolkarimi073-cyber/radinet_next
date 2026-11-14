@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { BACKEND_URL } from '@/lib/auth-client';
-import { extractUserFromHeader } from '@/lib/server-auth';
-import { addTicketReplyServer } from '@/lib/support-storage';
+import { extractTokenFromRequest } from '@/lib/server-auth';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -12,55 +11,36 @@ export async function POST(
 ) {
   try {
     const { id } = await Promise.resolve(params);
-    const authHeader = request.headers.get('authorization') ?? undefined;
-    const user = extractUserFromHeader(authHeader);
-    const body = await request.json();
+    const token = extractTokenFromRequest(request);
+    const authHeader = token ? `Bearer ${token}` : request.headers.get('authorization') ?? undefined;
+    if (!authHeader) {
+      return NextResponse.json({ error: 'احراز هویت الزامی است' }, { status: 401 });
+    }
 
+    const body = await request.json();
     const { message } = body || {};
     if (!message || typeof message !== 'string' || !message.trim()) {
       return NextResponse.json({ error: 'متن پاسخ نمی‌تواند خالی باشد.' }, { status: 400 });
     }
 
-    const userName = user?.fullName || 'کاربر بیمار';
-    const userId = user?.id || `usr-${Date.now()}`;
+    const backendRes = await fetch(`${BACKEND_URL}/panel/tickets/${encodeURIComponent(id)}/reply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: authHeader,
+      },
+      body: JSON.stringify({ message: message.trim() }),
+    });
 
-    // 1. Try forwarding to backend first if token available
-    let backendReply: any = null;
-    if (authHeader) {
-      try {
-        const backendRes = await fetch(`${BACKEND_URL}/panel/tickets/${id}/reply`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: authHeader,
-          },
-          body: JSON.stringify({ message: message.trim() }),
-        });
-        if (backendRes.ok) {
-          backendReply = await backendRes.json();
-        }
-      } catch {
-        // Ignore backend offline
-      }
+    const data = await backendRes.json().catch(() => ({}));
+    if (!backendRes.ok) {
+      return NextResponse.json(
+        { error: data.message || 'خطا در ارسال پاسخ' },
+        { status: backendRes.status }
+      );
     }
 
-    // 2. Persist locally to support storage only if backend did not handle it
-    const localReply = !backendReply
-      ? await addTicketReplyServer(id, message.trim(), userName, 'user', userId)
-      : null;
-
-    const result = backendReply || {
-      id: localReply?.id || `rep-${Date.now()}`,
-      message: message.trim(),
-      createdAt: localReply?.created_at || new Date().toISOString(),
-      author: {
-        id: userId,
-        fullName: userName,
-        role: 'user',
-      },
-    };
-
-    return NextResponse.json(result, { status: 201 });
+    return NextResponse.json(data, { status: 201 });
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : 'Unknown error';
     return NextResponse.json({ error: errorMsg }, { status: 500 });

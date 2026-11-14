@@ -3,6 +3,7 @@ import {
   createConsultationRequest,
   getAllConsultationRequests,
 } from '@/lib/about-data';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export async function POST(req: Request) {
   try {
@@ -30,9 +31,10 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const list = await getAllConsultationRequests();
+    const auth = getAuthorizationHeader(req, 'admin');
+    const list = await getAllConsultationRequests(auth);
     return NextResponse.json(list);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

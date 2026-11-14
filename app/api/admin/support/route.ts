@@ -4,16 +4,18 @@ import {
   getSupportContactInfoServer,
   listTicketsServer,
 } from '@/lib/support-storage';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const auth = getAuthorizationHeader(request, 'support_expert');
     const [contact_info, faqs, ticketsResult] = await Promise.all([
       getSupportContactInfoServer(),
-      getAllFaqsAdmin(),
-      listTicketsServer({ limit: 100 }),
+      getAllFaqsAdmin(auth),
+      listTicketsServer({ limit: 100 }, auth),
     ]);
 
     return NextResponse.json({

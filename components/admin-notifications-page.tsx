@@ -418,7 +418,7 @@ export function AdminNotificationsPage() {
                         {notifLoading && (
                           <tr><td colSpan={8} className="admin-page-empty">در حال دریافت اعلان‌ها…</td></tr>
                         )}
-                        {!notifLoading && Array.isArray(notifData?.items) && notifData.items.map((item) => (
+                        {!notifLoading && notifData && Array.isArray(notifData.items) && notifData.items.map((item) => (
                           <tr key={item.id}>
                             <td data-label="عنوان"><strong>{item.title}</strong></td>
                             <td data-label="پیام">{item.message.length > 50 ? `${item.message.slice(0, 50)}…` : item.message}</td>
@@ -597,7 +597,7 @@ export function AdminNotificationsPage() {
                         {smsLogLoading && (
                           <tr><td colSpan={5} className="admin-page-empty">در حال دریافت گزارش‌ها…</td></tr>
                         )}
-                        {!smsLogLoading && Array.isArray(smsLogData?.items) && smsLogData.items.map((item) => (
+                        {!smsLogLoading && smsLogData && Array.isArray(smsLogData.items) && smsLogData.items.map((item) => (
                           <tr key={item.id}>
                             <td data-label="شماره"><strong>{item.phoneNumber}</strong></td>
                             <td data-label="پیام">{item.message.length > 50 ? `${item.message.slice(0, 50)}…` : item.message}</td>

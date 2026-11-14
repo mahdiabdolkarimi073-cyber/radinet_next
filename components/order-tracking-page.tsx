@@ -96,8 +96,8 @@ export function OrderTrackingPage() {
       if (orderNumber.trim()) {
         const orderResponse = await fetch(`${api}/api/shop/orders/${encodeURIComponent(orderNumber.trim())}`);
         if (!orderResponse.ok) throw new Error('سفارشی با این شماره پیدا نشد.');
-        selected = await orderResponse.json();
-        if (!orders.some((item) => item.orderNumber === selected?.orderNumber)) orders = [selected, ...orders];
+        selected = (await orderResponse.json()) as Order;
+        if (selected && !orders.some((item) => item.orderNumber === selected?.orderNumber)) orders = [selected, ...orders];
       }
       if (!selected) selected = orders[0] ?? null;
       if (!selected) throw new Error('سفارشی با این اطلاعات پیدا نشد.');

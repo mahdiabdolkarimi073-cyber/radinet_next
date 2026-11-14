@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminListShopOrdersServer } from '@/lib/shop-storage';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,7 @@ export async function GET(req: Request) {
     const status = searchParams.get('status') || undefined;
     const paymentStatus = searchParams.get('paymentStatus') || undefined;
     const search = searchParams.get('search') || undefined;
+    const auth = getAuthorizationHeader(req, 'admin');
 
     const data = await adminListShopOrdersServer({
       page,
@@ -19,7 +21,7 @@ export async function GET(req: Request) {
       status,
       paymentStatus,
       search,
-    });
+    }, auth);
 
     return NextResponse.json(data);
   } catch (error) {

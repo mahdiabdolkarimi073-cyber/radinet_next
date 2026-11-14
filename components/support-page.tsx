@@ -62,7 +62,8 @@ export function SupportPage({
   categories,
   initialReviews = [],
 }: SupportPageProps) {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
+  const isAuthenticated = Boolean(user);
 
   // FAQs state
   const [faqs, setFaqs] = useState<SupportFaq[]>(initialFaqs);

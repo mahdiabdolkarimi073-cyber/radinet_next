@@ -105,6 +105,24 @@ export default function OrgNewRequestPage() {
       return;
     }
 
+    let parsedAge: number | undefined;
+    if (age.trim()) {
+      const normalizedAge = age
+        .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+        .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+        .trim();
+      if (!/^\d+$/.test(normalizedAge)) {
+        setError('سن بیمار باید یک عدد صحیح معتبر باشد');
+        return;
+      }
+      const num = Number.parseInt(normalizedAge, 10);
+      if (!Number.isSafeInteger(num) || num < 0 || num > 130) {
+        setError('سن بیمار باید بین ۰ تا ۱۳۰ سال باشد');
+        return;
+      }
+      parsedAge = num;
+    }
+
     setSaving(true);
     setError('');
     try {
@@ -121,7 +139,7 @@ export default function OrgNewRequestPage() {
         fd.append('patientLastName', patientLastName.trim());
         if (nationalId.trim()) fd.append('nationalId', nationalId.trim());
         if (phone.trim()) fd.append('phone', phone.trim());
-        if (age.trim()) fd.append('age', age.trim());
+        if (parsedAge !== undefined) fd.append('age', String(parsedAge));
         fd.append('gender', gender);
         if (city.trim()) fd.append('city', city.trim());
         fd.append('requestType', requestType);
@@ -143,7 +161,7 @@ export default function OrgNewRequestPage() {
           patientLastName: patientLastName.trim(),
           nationalId: nationalId.trim() || undefined,
           phone: phone.trim() || undefined,
-          age: age.trim() ? Number(age) : undefined,
+          age: parsedAge,
           gender,
           city: city.trim() || 'تهران',
           requestType,

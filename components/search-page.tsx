@@ -29,7 +29,7 @@ type Product = {
   oldPrice?: number | null;
   stock: number;
   imageUrl: string;
-  category?: { name: string } | null;
+  category?: { name: string; slug?: string } | null;
 };
 
 type SortOption = 'newest' | 'price-asc' | 'price-desc' | 'sales' | 'rating';
@@ -104,7 +104,7 @@ export function SearchPage() {
       const data = await res.json();
       let items = data.items ?? [];
       if (selectedCategories.length > 1) {
-        items = items.filter((p: Product) => p.category && selectedCategories.includes(p.category.slug) || selectedCategories.includes((p as any).categorySlug));
+        items = items.filter((p: Product) => (p.category?.slug && selectedCategories.includes(p.category.slug)) || selectedCategories.includes((p as any).categorySlug));
       }
       setProducts(items);
       setTotal(data.total ?? items.length);

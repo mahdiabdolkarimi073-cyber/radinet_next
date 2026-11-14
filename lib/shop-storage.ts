@@ -1,1765 +1,674 @@
-import fs from 'fs';
-import path from 'path';
+import { BACKEND_URL as backendUrl } from './auth-client';
 import type {
   AdminReviewListResponse,
   OrderListResponse,
   OrderStatsResponse,
   ProductListResponse,
   ProductReview,
-  RelatedProduct,
   ShopCartConfig,
   ShopCategory,
   ShopDiscount,
   ShopOrder,
-  ShopOrderItem,
   ShopProduct,
   ShopShippingMethod,
 } from './shop-data';
-
-function getDbFilePath(): string {
-  const localData = path.join(process.cwd(), 'data', 'radinet_db.json');
-  if (fs.existsSync(localData)) return localData;
-  const frontendData = path.join(process.cwd(), 'frontend', 'data', 'radinet_db.json');
-  if (fs.existsSync(frontendData)) return frontendData;
-  if (fs.existsSync(path.join(process.cwd(), 'frontend'))) {
-    return frontendData;
-  }
-  return localData;
-}
-
-const initialCategories: ShopCategory[] = [
-  {
-    id: 'cat-imaging-equipment',
-    name: 'دستگاه‌های تصویربرداری',
-    slug: 'imaging-equipment',
-    description: 'تجهیزات اصلی ام‌آر‌آی، سی‌تی‌اسکن، رادیولوژی دیجیتال، ماموگرافی و فلوروسکوپی',
-    imageUrl: 'https://images.pexels.com/photos/32532077/pexels-photo-32532077.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    heroImageUrl: 'https://images.pexels.com/photos/32532077/pexels-photo-32532077.jpeg?auto=compress&cs=tinysrgb&h=600&w=1200',
-    aboutTitle: 'فناوری‌های پیشرفته تجهیزات تشخیصی رادینت',
-    aboutDescription: 'ارائه مدرن‌ترین دستگاه‌های تصویربرداری پرتو تشخیصی با پشتیبانی و خدمات کالیبراسیون تخصصی در سراسر مراکز کشور.',
-    aboutImageUrl: 'https://images.pexels.com/photos/32532077/pexels-photo-32532077.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    iconKey: 'imaging-equipment',
-    colorTheme: 'blue',
-    parentId: null,
-    displayOrder: 1,
-    isActive: true,
-  },
-  {
-    id: 'cat-accessories',
-    name: 'تجهیزات و لوازم جانبی',
-    slug: 'accessories',
-    description: 'کویل‌های تخصصی MRI، مانیتورهای تشخیصی DICOM، گردهای ضدپراکندگی، پروب سونوگرافی و کابل‌ها',
-    imageUrl: 'https://images.pexels.com/photos/13704354/pexels-photo-13704354.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    heroImageUrl: 'https://images.pexels.com/photos/13704354/pexels-photo-13704354.jpeg?auto=compress&cs=tinysrgb&h=600&w=1200',
-    aboutTitle: 'تجهیزات تکمیلی و ابزار دقیق تصویربرداری',
-    aboutDescription: 'ارائه کلیه متعلقات، کارت‌های پردازش تصویر و قطعات جانبی استاندارد برای مراکز درمانی و بخش‌های تصویربرداری.',
-    aboutImageUrl: 'https://images.pexels.com/photos/13704354/pexels-photo-13704354.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    iconKey: 'accessories',
-    colorTheme: 'green',
-    parentId: null,
-    displayOrder: 2,
-    isActive: true,
-  },
-  {
-    id: 'cat-consumables',
-    name: 'مواد و لوازم مصرفی',
-    slug: 'consumables',
-    description: 'روپوش سربی حفاظت اشعه، سرنگ انژکتور حاجب، ژل سونوگرافی، دستکش محافظ و روکش بهداشتی',
-    imageUrl: 'https://images.pexels.com/photos/19601385/pexels-photo-19601385.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    heroImageUrl: 'https://images.pexels.com/photos/19601385/pexels-photo-19601385.jpeg?auto=compress&cs=tinysrgb&h=600&w=1200',
-    aboutTitle: 'لوازم مصرفی بالینی و حفاظت پرتوی رادینت',
-    aboutDescription: 'تأمین مطمئن و همیشگی باکیفیت‌ترین مواد و لوازم مصرفی ایمنی و بهداشتی رادیولوژی.',
-    aboutImageUrl: 'https://images.pexels.com/photos/19601385/pexels-photo-19601385.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    iconKey: 'consumables',
-    colorTheme: 'orange',
-    parentId: null,
-    displayOrder: 3,
-    isActive: true,
-  },
-  {
-    id: 'cat-imaging-media',
-    name: 'فیلم و مدیای تصویربرداری',
-    slug: 'imaging-media',
-    description: 'فیلم‌های حرارتی DryView، کاست‌های دیجیتال CR، پرینترهای لیزری پزشکی و سی‌دی‌های پکس DICOM',
-    imageUrl: 'https://images.pexels.com/photos/9951387/pexels-photo-9951387.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    heroImageUrl: 'https://images.pexels.com/photos/9951387/pexels-photo-9951387.jpeg?auto=compress&cs=tinysrgb&h=600&w=1200',
-    aboutTitle: 'رسانه‌ها و ابزارهای آرشیو و چاپ تصاویر پزشکی',
-    aboutDescription: 'ارائه انواع فیلم‌های درای، پرینترها و مدیای ذخیره‌سازی سازگار با استانداردهای DICOM.',
-    aboutImageUrl: 'https://images.pexels.com/photos/9951387/pexels-photo-9951387.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    iconKey: 'imaging-media',
-    colorTheme: 'blue',
-    parentId: null,
-    displayOrder: 4,
-    isActive: true,
-  },
-];
-
-const initialProducts: ShopProduct[] = [
-  {
-    id: 'prod-001',
-    name: 'دستگاه تصویربرداری MRI ۱.۵ تسلا مگنتوم اسپیریت',
-    slug: 'rad-mri-15t-spirit',
-    description: `<h3>دستگاه تصویربرداری MRI ۱.۵ تسلا زیمنس</h3>
-<p>سیستم تصویربرداری رزونانس مغناطیسی مگنتوم اسپیریت ۱.۵ تسلا مجهز به فناوری انقلابی Tim+Dot، تصویری با وضوح خیره‌کننده و کاهش زمان اسکن تا ۴۰٪ ارائه می‌دهد. این دستگاه قابلیت انجام کلیه پروتکل‌های تخصصی مغز و اعصاب، اسکلتی-عضلانی، بادی و آنژیوگرافی بدون تزریق را فراهم می‌کند.</p>
-<h4>مزایای کلیدی:</h4>
-<ul>
-<li>مگنت ابررسانا با مصرف هلیوم صفر (Zero Helium Boil-off)</li>
-<li>بورد مانیتورینگ داخلی و سنسورهای فشار اکسیژن و هلیوم</li>
-<li>یکپارچگی کامل با روترهای ابری رادینت و ارسال خودکار به سامانه تله‌ریپورت</li>
-<li>کاهش چشمگیر نویز صوتی حین اسکن برای آرامش حداکثری بیمار</li>
-</ul>`,
-    shortDescription: 'سیستم پیشرفته رزونانس مغناطیسی ۱.۵ تسلا با کویل‌های اختصاصی Tim و کاهش زمان اسکن بیمار.',
-    technicalSpecifications: JSON.stringify({
-      'شدت میدان مغناطیسی': '۱.۵ تسلا (ابررسانا)',
-      'سیستم گرادیان': 'Tim+Dot با نرخ شیب ۴۵ میلی‌تسلا بر متر',
-      'قطر دهانه گانتری (Bore)': '۶۰ سانتی‌متر با تهویه اختصاصی',
-      'کانال‌های RF': '۱۶ کانال مستقل دریافت امواج',
-      'پروتکل‌های خروجی': 'DICOM 3.0, WADO, HL7',
-      'کشور سازنده': 'آلمان / زیمنس هلثینیرز',
-    }),
-    categoryId: 'cat-imaging-equipment',
-    brand: 'Siemens Healthineers',
-    sku: 'RAD-MRI-15T',
-    price: 185000000,
-    oldPrice: 210000000,
-    discountPercent: 12,
-    stock: 3,
-    salesCount: 14,
-    imageUrl: 'https://images.pexels.com/photos/32532077/pexels-photo-32532077.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    gallery: [
-      'https://images.pexels.com/photos/32532077/pexels-photo-32532077.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-      'https://images.pexels.com/photos/9951387/pexels-photo-9951387.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-      'https://images.pexels.com/photos/13704354/pexels-photo-13704354.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    ],
-    isActive: true,
-    isFeatured: true,
-    rating: 9.6,
-    reviewCount: 18,
-    createdAt: new Date(Date.now() - 3600000 * 24 * 30).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'prod-002',
-    name: 'مانیتور تشخیصی ۵ مگاپیکسل بارکو مدل Coronis Fusion',
-    slug: 'barco-coronis-fusion-5mp',
-    description: `<h3>مانیتور تشخیصی پزشکی Barco Coronis Fusion 5MP</h3>
-<p>نمایشگر تشخیصی فوق‌پیشرفته بارکو با رزولوشن ۵ مگاپیکسل، اختصاصاً جهت بازخوانی و تفسیر تصاویر ماموگرافی دیجیتال، سی‌تی اسکن و ام‌آر‌آی توسط پزشکان رادیولوژیست طراحی شده است. این مانیتور با کالیبراسیون دائمی و سیستم تصحیح یکنواختی نور، بالاترین استاندارد اطمینان تشخیصی را به همراه دارد.</p>
-<h4>مشخصات برجسته:</h4>
-<ul>
-<li>سنسور هوشمند جلوی پنل I-Guard جهت کالیبراسیون خودکار DICOM Part 14</li>
-<li>کنتراست خارق‌العاده ۲۰۰۰:۱ و شدت روشنایی ۲۱۰۰ کاندلا بر متر مربع</li>
-<li>دارای تکنولوژی Spotlight برای بزرگنمایی جزئیات مشکوک و میکروکلسیفیکاسیون‌ها</li>
-<li>پشتیبانی از تفکیک خاکستری ۱۰ بیتی عمیق</li>
-</ul>`,
-    shortDescription: 'مانیتور پزشکی ۵ مگاپیکسل بارکو با کالیبراسیون خودکار سنسوریک DICOM Part 14 برای ماموگرافی و رادیولوژی.',
-    technicalSpecifications: JSON.stringify({
-      'رزولوشن تصویر': '۲۰۴۸ × ۲۵۶۰ پیکسل (۵ مگاپیکسل)',
-      'سایز پنل': '۲۱.۳ اینچ رنگی IPS با روکش ضد انعکاس',
-      'کالیبراسیون': 'سنسور داخلی I-Guard با استاندارد DICOM 14',
-      'روشنایی حداکثری': '۲۱۰۰ cd/m²',
-      'پورت‌های ورودی': 'DisplayPort 1.2, DVI-D, USB Hub',
-      'کشور سازنده': 'بلژیک / Barco',
-    }),
-    categoryId: 'cat-accessories',
-    brand: 'Barco',
-    sku: 'BARCO-MDNG-5221',
-    price: 48000000,
-    oldPrice: 54000000,
-    discountPercent: 11,
-    stock: 8,
-    salesCount: 32,
-    imageUrl: 'https://images.pexels.com/photos/13704354/pexels-photo-13704354.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    gallery: [
-      'https://images.pexels.com/photos/13704354/pexels-photo-13704354.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-      'https://images.pexels.com/photos/9951387/pexels-photo-9951387.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    ],
-    isActive: true,
-    isFeatured: true,
-    rating: 9.8,
-    reviewCount: 24,
-    createdAt: new Date(Date.now() - 3600000 * 24 * 25).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'prod-003',
-    name: 'سیستم ورک‌استیشن تفسیر و ذخیره‌ساز ابری رادینت PACS Pro',
-    slug: 'radinet-pacs-server-workstation',
-    description: `<h3>سرور و ایستگاه کاری اختصاصی تله‌رادیولوژی Radinet PACS Server</h3>
-<p>سامانه جامع ذخیره‌سازی و پایانه پردازش پرونده‌های تصویربرداری رادینت، با پردازنده چند‌هسته‌ای زئون و حافظه‌های فوق‌سریع NVMe آرایه RAID 10، ظرفیت نگهداری مطمئن بیش از ۵۰۰,۰۰۰ مطالعه کامل با پشتیبانی همزمان از ده‌ها کاربر تله‌ریپورت را فراهم می‌کند.</p>
-<h4>امکانات سامانه:</h4>
-<ul>
-<li>سرویس‌دهنده بومی DICOM C-STORE, C-FIND, C-MOVE و پروتکل مدرن WADO-RS</li>
-<li>سیستم بکاپ خودکار هیبریدی روی کلاود امن رادینت</li>
-<li>نصب و پیکربندی سریع با راهنمای جامع و پشتیبانی ۲۴ ساعته رادینت</li>
-</ul>`,
-    shortDescription: 'ورک‌استیشن و سرور آرشیو تصاویر پزشکی PACS با حافظه پرسرعت RAID، اتصال امن و وب‌ویوور سازگار با دایکام.',
-    technicalSpecifications: JSON.stringify({
-      'پردازنده مرکزی': 'Intel Xeon Silver 16-Core',
-      'حافظه رم': '۶۴ گیگابایت DDR4 ECC Registered',
-      'فضای ذخیره‌سازی': '۸ ترابایت NVMe RAID 10 + ۱۶ ترابایت HDD آرشیو سرد',
-      'پورت شبکه': 'Quad 10GbE SFP+ Fiber Optic',
-      'سیستم عامل و نرم‌افزار': 'Radinet Linux Enterprise PACS pre-installed',
-      'ضمانت': '۳ سال گارانتی تعویض رادینت و پشتیبانی نامحدود',
-    }),
-    categoryId: 'cat-imaging-equipment',
-    brand: 'Radinet Core',
-    sku: 'RAD-PACS-S1',
-    price: 98000000,
-    oldPrice: 112000000,
-    discountPercent: 13,
-    stock: 5,
-    salesCount: 19,
-    imageUrl: 'https://images.pexels.com/photos/9951387/pexels-photo-9951387.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    gallery: [
-      'https://images.pexels.com/photos/9951387/pexels-photo-9951387.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-      'https://images.pexels.com/photos/32532077/pexels-photo-32532077.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    ],
-    isActive: true,
-    isFeatured: true,
-    rating: 9.4,
-    reviewCount: 15,
-    createdAt: new Date(Date.now() - 3600000 * 24 * 20).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'prod-004',
-    name: 'روپوش سربی دولایه حفاظت در برابر اشعه ایکس ۰.۵mm مدل Kiran Pro',
-    slug: 'kiran-pro-lead-apron-05mm',
-    description: `<h3>روپوش سربی محافظ پرتو ایکس با ضریب معادل ۰.۵ میلی‌متر سرب</h3>
-<p>طراحی ارگونومیک و توزیع وزن بهینه بر روی شانه‌ها و ستون فقرات با الیاف سبک نانو-سربی، خستگی پرسنل رادیولوژی، آنژیوگرافی و اتاق عمل را تا ۶۰٪ کاهش می‌دهد. این جامه سربی دارای تاییدیه‌های بین‌المللی CE و استاندارد انرژی اتمی ایران است.</p>
-<h4>ویژگی‌ها:</h4>
-<ul>
-<li>ضخامت حفاظتی معادل ۰.۵ میلی‌متر Pb در بخش جلویی</li>
-<li>محافظت کامل گردن با تیروئید شیلد مغناطیسی جداشونده رایگان</li>
-<li>روکش خارجی ضدباکتری، مقاوم در برابر مایعات بیولوژیک و با قابلیت ضدعفونی سریع</li>
-</ul>`,
-    shortDescription: 'پیش‌بند و جلیقه محافظ سربی سبک وزن با معادل ۰.۵ میلی‌متر سرب به همراه شیلد تیروئید متصل.',
-    technicalSpecifications: JSON.stringify({
-      'ضخامت معادل سرب': '۰.۵ میلی‌متر Pb در جلو، ۰.۲۵ میلی‌متر در پشت',
-      'جنس لایه داخلی': 'نانوکامپوزیت سبک ترکیبی سرب و بیسموت',
-      'سایزها': 'M, L, XL قابل تنظیم با کمربند طبی فیکس‌کننده',
-      'شیلد جانبی': 'دارای تیروئید شیلد مجزا با قفل مگنتی',
-      'استاندارد': 'IEC 61331-1:2014 & CE 0120',
-      'سازنده': 'Kiran Medical / هند',
-    }),
-    categoryId: 'cat-consumables',
-    brand: 'Kiran Medical',
-    sku: 'KIR-APRON-05',
-    price: 4200000,
-    oldPrice: 4800000,
-    discountPercent: 12,
-    stock: 25,
-    salesCount: 68,
-    imageUrl: 'https://images.pexels.com/photos/19601385/pexels-photo-19601385.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    gallery: [
-      'https://images.pexels.com/photos/19601385/pexels-photo-19601385.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    ],
-    isActive: true,
-    isFeatured: true,
-    rating: 9.1,
-    reviewCount: 42,
-    createdAt: new Date(Date.now() - 3600000 * 24 * 15).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'prod-005',
-    name: 'فیلم حرارتی پزشکی DryView کراستریم سایز ۱۴x۱۷ (بسته ۱۲۵ برگی)',
-    slug: 'carestream-dryview-film-14x17',
-    description: `<h3>فیلم درای ویو حرارتی لیزری Carestream DryView DVB+</h3>
-<p>فیلم باکیفیت و با دانسیته نوری بالا (Dmax ≥ ۳.۱) جهت چاپ شفاف و بدون نیاز به داروی ظهور و ثبوت در چاپگرهای لیزری پزشکی Carestream سری ۵۷۰۰, ۵۹۵۰ و ۶۹۵۰. تضمین ماندگاری تصویر و اطلاعات بالینی بیمار تا بیش از ۳۰ سال در بایگانی استاندارد.</p>`,
-    shortDescription: 'مدیای حرارتی چاپ نگاتیو تصویربرداری پزشکی بدون نیاز به مایع شیمیایی مخصوص رادیولوژی و سی‌تی‌اسکن.',
-    technicalSpecifications: JSON.stringify({
-      'ابعاد فیلم': '۱۴ × ۱۷ اینچ (۳۵ × ۴۳ سانتی‌متر)',
-      'تعداد در بسته': '۱۲۵ برگ داخل کارتریج نوربند استاندارد',
-      'چگالی نوری حداکثری': 'Dmax ≥ 3.10',
-      'پایه فیلم': 'پلی‌استر آبی با پایه ۷ میلی‌میکرون',
-      'سازگاری': 'DryView Laser Imagers 5700 / 5950 / 6950',
-      'کشور سازنده': 'ایالات متحده آمریکا / Carestream Health',
-    }),
-    categoryId: 'cat-imaging-media',
-    brand: 'Carestream',
-    sku: 'CS-DRY-1417',
-    price: 6800000,
-    oldPrice: 7500000,
-    discountPercent: 9,
-    stock: 40,
-    salesCount: 110,
-    imageUrl: 'https://images.pexels.com/photos/9951387/pexels-photo-9951387.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    gallery: [
-      'https://images.pexels.com/photos/9951387/pexels-photo-9951387.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    ],
-    isActive: true,
-    isFeatured: false,
-    rating: 8.9,
-    reviewCount: 31,
-    createdAt: new Date(Date.now() - 3600000 * 24 * 12).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'prod-006',
-    name: 'کویل تخصصی تصویربرداری سر و گردن MRI زیمنس ۱۶ کانال',
-    slug: 'siemens-head-neck-16ch-coil',
-    description: `<h3>کویل سر و گردن ۱۶ کاناله سیستم‌های MRI زیمنس</h3>
-<p>طراحی کالبدشناختی پیشرفته با گیرندگی سیگنال بالا جهت تصویربرداری‌های با وضوح میکرومتری از ساختارهای ظریف مغز، نخاع گردنی و عروق کاروتید. سازگار با مگنت‌های ۱.۵ تسلا سری Espree, Avanto و Aera.</p>`,
-    shortDescription: 'کویل ارگونومیک ۱۶ کاناله با SNR بالا جهت آنژیوگرافی و ام‌آر‌آی پیشرفته سر، ستون فقرات گردنی و مغز.',
-    technicalSpecifications: JSON.stringify({
-      'تعداد کانال‌ها': '۱۶ کانال مستقل تفکیک فرکانسی',
-      'سازگاری با دستگاه': 'Siemens 1.5T Tim Systems (Aera, Avanto, Espree)',
-      'نوع المان‌ها': 'Ultra-flexible loop array',
-      'وزن کویل': '۳.۴ کیلوگرم با پدهای ضربه‌گیر ارگونومیک',
-      'گارانتی': '۱۸ ماه گارانتی رسمی تعویض قطعه الکترونیکی',
-    }),
-    categoryId: 'cat-accessories',
-    brand: 'Siemens Healthineers',
-    sku: 'SIEM-COIL-HN16',
-    price: 24500000,
-    oldPrice: 28000000,
-    discountPercent: 12,
-    stock: 6,
-    salesCount: 12,
-    imageUrl: 'https://images.pexels.com/photos/13704354/pexels-photo-13704354.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    gallery: [
-      'https://images.pexels.com/photos/13704354/pexels-photo-13704354.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    ],
-    isActive: true,
-    isFeatured: false,
-    rating: 9.3,
-    reviewCount: 9,
-    createdAt: new Date(Date.now() - 3600000 * 24 * 10).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'prod-007',
-    name: 'پروب اولتراسوند کانوکس فیلیپس مدل C5-1 با ترانسدیوسر PureWave',
-    slug: 'philips-convex-probe-c5-1',
-    description: `<h3>پروب سونوگرافی کانوکس جنرال فیلیپس سری Affiniti و EPIQ</h3>
-<p>ترانسدیوسر کریستال منفرد PureWave با بازه فرکانسی ۱ تا ۵ مگاهرتز جهت معاینات بالینی شکم، زنان و زایمان، لگن و عروق عمقی با شفافیت بی‌نظیر حتی در بیماران با بافت چربی ضخیم.</p>`,
-    shortDescription: 'پروب کانوکس سونوگرافی با تکنولوژی سینگل کریستال PureWave مناسب اکوگرافی شکم و ترومای حاد.',
-    technicalSpecifications: JSON.stringify({
-      'محدوده فرکانس': '۱.۰ الی ۵.۰ مگاهرتز باند پهن',
-      'نوع کریستال': 'تکنولوژی بلور یگانه PureWave',
-      'سیستم‌های سازگار': 'Philips EPIQ 7, EPIQ 5, Affiniti 70, Affiniti 50',
-      'کاربردها': 'Abdominal, OB/GYN, Renal, Vascular',
-      'کشور سازنده': 'آمریکا / هلند - Philips Medical',
-    }),
-    categoryId: 'cat-accessories',
-    brand: 'Philips Medical',
-    sku: 'PHI-PRB-C51',
-    price: 34500000,
-    oldPrice: null,
-    discountPercent: 0,
-    stock: 4,
-    salesCount: 8,
-    imageUrl: 'https://images.pexels.com/photos/19601385/pexels-photo-19601385.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    gallery: [
-      'https://images.pexels.com/photos/19601385/pexels-photo-19601385.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    ],
-    isActive: true,
-    isFeatured: false,
-    rating: 9.5,
-    reviewCount: 11,
-    createdAt: new Date(Date.now() - 3600000 * 24 * 8).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'prod-008',
-    name: 'انژکتور خودکار دو سرنگه سی‌تی اسکن Medrad Stellant D با پایه متحرک',
-    slug: 'medrad-stellant-ct-injector-dual',
-    description: `<h3>سیستم انژکتور تزریق ماده حاجب دوبل سی‌تی اسکن بایرلابرکتوریز</h3>
-<p>دستگاه تزریق هوشمند مایع کنتراست و سالین به صورت همزمان یا متوالی با برنامه‌ریزی دقیق فازهای تزریق، کنترل فشار سنسوریک و کاهش ریسک پارگی عروق حین پروتکل‌های حساس آنژیو سی‌تی مغز، ریه و قلب.</p>`,
-    shortDescription: 'انژکتور دو سرنگه هوشمند تزریق حاجب و سالین ویژه پروتکل‌های پیشرفته مولتی‌اسلایس سی‌تی اسکن.',
-    technicalSpecifications: JSON.stringify({
-      'ظرفیت سرنگ‌ها': '۲۰۰ میلی‌لیتر کنتراست + ۲۰۰ میلی‌لیتر سالین شستشو',
-      'دبی تزریق': '۰.۱ تا ۱۰ میلی‌لیتر در ثانیه با گام‌های ۰.۱',
-      'حداکثر حد فشار': '۳۰۰ psi یا ۲۰.۷ بار با سیستم قطع خودکار',
-      'قابلیت‌ها': 'پروتکل DualFlow جهت تزریق همزمان، مانیتور لمسی رنگی',
-      'کشور سازنده': 'آمریکا / Bayer Radiology',
-    }),
-    categoryId: 'cat-imaging-equipment',
-    brand: 'Bayer Radiology',
-    sku: 'MED-INJ-STEL-D',
-    price: 78000000,
-    oldPrice: 85000000,
-    discountPercent: 8,
-    stock: 2,
-    salesCount: 5,
-    imageUrl: 'https://images.pexels.com/photos/32532077/pexels-photo-32532077.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    gallery: [
-      'https://images.pexels.com/photos/32532077/pexels-photo-32532077.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    ],
-    isActive: true,
-    isFeatured: true,
-    rating: 9.7,
-    reviewCount: 7,
-    createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
-const initialShippingMethods: ShopShippingMethod[] = [
-  {
-    id: 'ship-truck',
-    code: 'truck',
-    name: 'ناوگان حمل تخصصی تجهیزات رادینت (تضمین ایمنی و کالیبراسیون)',
-    description: 'حمل در ون‌ها و کامیونت‌های مجهز به فنربندی بادی و ضربه‌گیر مخصوص تجهیزات حساس تصویربرداری.',
-    price: 350000,
-    estimatedDays: '۱ الی ۲ روز کاری',
-    iconKey: 'truck',
-    isActive: true,
-  },
-  {
-    id: 'ship-post',
-    code: 'post',
-    name: 'پست پیشتاز با بسته‌بندی ضدضربه پزشکی',
-    description: 'ارسال از طریق شرکت پست جمهوری اسلامی ایران به سراسر شهرستان‌ها همراه با بیمه محموله.',
-    price: 180000,
-    estimatedDays: '۲ الی ۴ روز کاری',
-    iconKey: 'post',
-    isActive: true,
-  },
-  {
-    id: 'ship-tipax',
-    code: 'tipax',
-    name: 'تیپاکس اکسپرس ویژه قطعات و ملزومات مصرفی',
-    description: 'تحویل درب کلینیک یا مرکز درمانی در سریع‌ترین زمان ممکن.',
-    price: 240000,
-    estimatedDays: '۲۴ الی ۴۸ ساعت',
-    iconKey: 'tipax',
-    isActive: true,
-  },
-  {
-    id: 'ship-bar',
-    code: 'bar',
-    name: 'باربری ترانزیت تجهیزات سنگین و پالت‌دار',
-    description: 'مخصوص سیستم‌های بزرگ ام‌آر‌آی، سی‌تی و تخت‌های سنگین تصویربرداری.',
-    price: 850000,
-    estimatedDays: '۲ الی ۳ روز کاری',
-    iconKey: 'bar',
-    isActive: true,
-  },
-];
-
-const initialDiscounts: ShopDiscount[] = [
-  {
-    id: 'disc-radinet',
-    code: 'RADINET2026',
-    type: 'percent',
-    value: 10,
-    description: '۱۰ درصد تخفیف ویژه رونمایی فروشگاه برای کلیه سفارش‌ها',
-    minOrderAmount: 1000000,
-    isActive: true,
-  },
-  {
-    id: 'disc-tele',
-    code: 'TELECARE',
-    type: 'fixed',
-    value: 500000,
-    description: '۵۰۰,۰۰۰ تومان تخفیف ویژه مراکز تحت پوشش تله‌ریپورت',
-    minOrderAmount: 3000000,
-    isActive: true,
-  },
-];
-
-const initialOrders: ShopOrder[] = [
-  {
-    id: 'order-sample-01',
-    orderNumber: 'RAD-98412',
-    customerName: 'دکتر محمدرضا صادقی',
-    customerPhone: '09121112233',
-    customerEmail: 'dr.sadeghi@gmail.com',
-    shippingAddress: 'تهران - منطقه ۶ - خیابان مطهری - نبش سنایی - کلینیک تصویربرداری مرکزی - کد پستی: ۱۵۸۸۶۱۴۱۱۱',
-    province: 'تهران',
-    city: 'تهران',
-    postalCode: '۱۵۸۸۶۱۴۱۱۱',
-    shippingMethod: 'truck',
-    shippingMethodName: 'ناوگان حمل تخصصی تجهیزات رادینت',
-    shippingCost: 350000,
-    needInvoice: true,
-    companyName: 'مرکز تصویربرداری دکتر صادقی',
-    companyNationalId: '10103567890',
-    companyEconomicCode: '411234567891',
-    paymentMethod: 'gateway',
-    paymentStatus: 'paid',
-    status: 'processing',
-    trackingCode: 'TRK-98412-RDN',
-    subtotal: 48000000,
-    discountTotal: 0,
-    tax: 4320000,
-    total: 52670000,
-    items: [
-      {
-        id: 'oi-01',
-        productId: 'prod-002',
-        productName: 'مانیتور تشخیصی ۵ مگاپیکسل بارکو مدل Coronis Fusion',
-        quantity: 1,
-        unitPrice: 48000000,
-        lineTotal: 48000000,
-        product: {
-          id: 'prod-002',
-          name: 'مانیتور تشخیصی ۵ مگاپیکسل بارکو مدل Coronis Fusion',
-          imageUrl: 'https://images.pexels.com/photos/13704354/pexels-photo-13704354.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-          slug: 'barco-coronis-fusion-5mp',
-          brand: 'Barco',
-        },
-      },
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
-    updatedAt: new Date(Date.now() - 3600000 * 12).toISOString(),
-  },
-  {
-    id: 'order-sample-02',
-    orderNumber: 'RAD-73910',
-    customerName: 'مهندس حسینی - بیمارستان رازی',
-    customerPhone: '09132223344',
-    customerEmail: 'razi.hospital@gmail.com',
-    shippingAddress: 'اصفهان - خیابان آمادگاه - ساختمان پزشکان رازی - بخش سی‌تی اسکن - کد پستی: ۸۱۳۵۶۱۱۹۹۹',
-    province: 'اصفهان',
-    city: 'اصفهان',
-    postalCode: '۸۱۳۵۶۱۱۹۹۹',
-    shippingMethod: 'tipax',
-    shippingMethodName: 'تیپاکس اکسپرس ویژه قطعات و ملزومات مصرفی',
-    shippingCost: 240000,
-    needInvoice: true,
-    companyName: 'بیمارستان تخصصی رازی اصفهان',
-    companyNationalId: '10260234567',
-    companyEconomicCode: '411333444555',
-    paymentMethod: 'card',
-    paymentStatus: 'paid',
-    status: 'shipped',
-    trackingCode: 'TPX-4829104882',
-    subtotal: 15200000,
-    discountTotal: 500000,
-    tax: 1323000,
-    total: 16263000,
-    items: [
-      {
-        id: 'oi-02',
-        productId: 'prod-004',
-        productName: 'روپوش سربی دولایه حفاظت در برابر اشعه ایکس ۰.۵mm مدل Kiran Pro',
-        quantity: 2,
-        unitPrice: 4200000,
-        lineTotal: 8400000,
-        product: {
-          id: 'prod-004',
-          name: 'روپوش سربی دولایه حفاظت در برابر اشعه ایکس ۰.۵mm مدل Kiran Pro',
-          imageUrl: 'https://images.pexels.com/photos/19601385/pexels-photo-19601385.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-          slug: 'kiran-pro-lead-apron-05mm',
-          brand: 'Kiran Medical',
-        },
-      },
-      {
-        id: 'oi-03',
-        productId: 'prod-005',
-        productName: 'فیلم حرارتی پزشکی DryView کراستریم سایز ۱۴x۱۷ (بسته ۱۲۵ برگی)',
-        quantity: 1,
-        unitPrice: 6800000,
-        lineTotal: 6800000,
-        product: {
-          id: 'prod-005',
-          name: 'فیلم حرارتی پزشکی DryView کراستریم سایز ۱۴x۱۷ (بسته ۱۲۵ برگی)',
-          imageUrl: 'https://images.pexels.com/photos/9951387/pexels-photo-9951387.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-          slug: 'carestream-dryview-film-14x17',
-          brand: 'Carestream',
-        },
-      },
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 24 * 4).toISOString(),
-    updatedAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-  },
-];
-
-const initialProductReviews: ProductReview[] = [
-  {
-    id: 'rev-seed-01',
-    productId: 'prod-001',
-    productSlug: 'rad-mri-15t-spirit',
-    productName: 'دستگاه تصویربرداری MRI ۱.۵ تسلا مگنتوم اسپیریت',
-    userId: 'user-seed-01',
-    userName: 'دکتر علیرضا محمدی',
-    userEmail: 'dr.mohammadi@radinet.ir',
-    rating: 5,
-    content: 'کیفیت تصاویر کویل‌های Tim و سرعت بازسازی تصاویر در مرکز تصویربرداری ما فوق‌العاده بوده و یکپارچگی کاملی با PACS رادینت دارد.',
-    status: 'approved',
-    reviewedBy: 'مدیر سامانه',
-    reviewedAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
-    createdAt: new Date(Date.now() - 3600000 * 24 * 6).toISOString(),
-  },
-  {
-    id: 'rev-seed-02',
-    productId: 'prod-002',
-    productSlug: 'barco-coronis-fusion-5mp',
-    productName: 'مانیتور تشخیصی ۵ مگاپیکسل بارکو مدل Coronis Fusion',
-    userId: 'user-seed-02',
-    userName: 'دکتر سارا کریمی',
-    userEmail: 's.karimi@radinet.ir',
-    rating: 5,
-    content: 'کالیبراسیون خودکار DICOM Part 14 و کنتراست مانیتور برای گزارش‌های ماموگرافی و سی‌تی‌اسکن کاملاً دقیق و بدون خستگی چشم است.',
-    status: 'approved',
-    reviewedBy: 'مدیر سامانه',
-    reviewedAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString(),
-    createdAt: new Date(Date.now() - 3600000 * 24 * 4).toISOString(),
-  },
-];
-
-function normalizeMaxOrderQtyValue(value: unknown): number | null {
-  if (value === null || value === undefined || value === '') return null;
-  const n = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(n) || n <= 0) return null;
-  return Math.floor(n);
-}
-
-function readDb(): any {
-  const filePath = getDbFilePath();
-  const dir = path.dirname(filePath);
-  try {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    if (!fs.existsSync(filePath)) {
-      const initial = {
-        shopCategories: initialCategories,
-        shopProducts: initialProducts,
-        shopShippingMethods: initialShippingMethods,
-        shopDiscounts: initialDiscounts,
-        shopOrders: initialOrders,
-        productReviews: initialProductReviews,
-      };
-      fs.writeFileSync(filePath, JSON.stringify(initial, null, 2), 'utf-8');
-      return initial;
-    }
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    const parsed = JSON.parse(raw);
-    let mutated = false;
-    if (!parsed.shopCategories || !Array.isArray(parsed.shopCategories) || parsed.shopCategories.length === 0) {
-      parsed.shopCategories = initialCategories;
-      mutated = true;
-    }
-    if (!parsed.shopProducts || !Array.isArray(parsed.shopProducts) || parsed.shopProducts.length === 0) {
-      parsed.shopProducts = initialProducts;
-      mutated = true;
-    }
-    if (!parsed.shopShippingMethods || !Array.isArray(parsed.shopShippingMethods) || parsed.shopShippingMethods.length === 0) {
-      parsed.shopShippingMethods = initialShippingMethods;
-      mutated = true;
-    }
-    if (!parsed.shopDiscounts || !Array.isArray(parsed.shopDiscounts)) {
-      parsed.shopDiscounts = initialDiscounts;
-      mutated = true;
-    }
-    if (!parsed.shopOrders || !Array.isArray(parsed.shopOrders)) {
-      parsed.shopOrders = initialOrders;
-      mutated = true;
-    }
-    if (!parsed.productReviews || !Array.isArray(parsed.productReviews)) {
-      parsed.productReviews = initialProductReviews;
-      mutated = true;
-    }
-    if (mutated) {
-      fs.writeFileSync(filePath, JSON.stringify(parsed, null, 2), 'utf-8');
-    }
-    return parsed;
-  } catch {
-    return {
-      shopCategories: initialCategories,
-      shopProducts: initialProducts,
-      shopShippingMethods: initialShippingMethods,
-      shopDiscounts: initialDiscounts,
-      shopOrders: initialOrders,
-      productReviews: initialProductReviews,
-    };
-  }
-}
-
-function writeDb(data: any): void {
-  const filePath = getDbFilePath();
-  const dir = path.dirname(filePath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-}
-
-// -------------------------------------------------------------
-// Public Categories & Brands
-// -------------------------------------------------------------
-
-export async function getShopCategoriesServer(): Promise<ShopCategory[]> {
-  const db = readDb();
-  const categories: ShopCategory[] = db.shopCategories || [];
-  const products: ShopProduct[] = db.shopProducts || [];
-
-  return categories
-    .filter((c) => c.isActive !== false)
-    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
-    .map((c) => {
-      const productCount = products.filter((p) => p.isActive !== false && p.categoryId === c.id).length;
-      return {
-        ...c,
-        _count: { products: productCount },
-      };
-    });
-}
-
-export async function getShopCategoryBySlugServer(slug: string): Promise<ShopCategory | null> {
-  const categories = await getShopCategoriesServer();
-  const found = categories.find((c) => c.slug === slug || c.id === slug);
-  if (!found) return null;
-  const children = categories.filter((c) => c.parentId === found.id);
-  return { ...found, children };
-}
-
-export async function getShopBrandsServer(): Promise<string[]> {
-  const db = readDb();
-  const products: ShopProduct[] = db.shopProducts || [];
-  const brands = new Set<string>();
-  products.forEach((p) => {
-    if (p.isActive !== false && p.brand) {
-      brands.add(p.brand.trim());
-    }
-  });
-  return Array.from(brands).sort();
-}
-
-// -------------------------------------------------------------
-// Public Products Query
-// -------------------------------------------------------------
 
 export type ProductFilterOptions = {
   search?: string;
   category?: string;
   categorySlug?: string;
+  categoryId?: string;
+  status?: string;
   brands?: string;
-  inStock?: boolean | string;
-  outOfStock?: boolean | string;
+  inStock?: string | boolean;
+  outOfStock?: string | boolean;
   minPrice?: number | string;
   maxPrice?: number | string;
   sort?: string;
   page?: number | string;
   limit?: number | string;
-  pageSize?: number | string;
+  featured?: boolean;
 };
-
-export async function getShopProductsServer(options: ProductFilterOptions = {}): Promise<ProductListResponse> {
-  const db = readDb();
-  const rawProducts: ShopProduct[] = db.shopProducts || [];
-  const categories: ShopCategory[] = db.shopCategories || [];
-  const categoryMap = new Map(categories.map((c) => [c.id, c]));
-
-  let list = rawProducts.filter((p) => p.isActive !== false);
-
-  // Category filter (slug or id)
-  const targetCategory = options.categorySlug || options.category;
-  if (targetCategory && targetCategory !== 'all' && targetCategory !== 'همه') {
-    const matchedCategory = categories.find((c) => c.slug === targetCategory || c.id === targetCategory || c.name === targetCategory);
-    if (matchedCategory) {
-      list = list.filter((p) => p.categoryId === matchedCategory.id);
-    }
-  }
-
-  // Brands filter
-  if (options.brands) {
-    const allowed = options.brands.split(',').map((b) => b.trim().toLowerCase());
-    if (allowed.length > 0) {
-      list = list.filter((p) => allowed.includes(p.brand.toLowerCase()));
-    }
-  }
-
-  // Search filter
-  if (options.search && options.search.trim()) {
-    const q = options.search.trim().toLowerCase();
-    list = list.filter((p) => {
-      return (
-        p.name.toLowerCase().includes(q) ||
-        (p.shortDescription && p.shortDescription.toLowerCase().includes(q)) ||
-        (p.description && p.description.toLowerCase().includes(q)) ||
-        (p.brand && p.brand.toLowerCase().includes(q)) ||
-        (p.sku && p.sku.toLowerCase().includes(q)) ||
-        (p.technicalSpecifications && p.technicalSpecifications.toLowerCase().includes(q))
-      );
-    });
-  }
-
-  // Stock filters
-  if (options.inStock === true || options.inStock === 'true' || options.inStock === '1') {
-    list = list.filter((p) => (p.stock || 0) > 0);
-  }
-  if (options.outOfStock === true || options.outOfStock === 'true' || options.outOfStock === '1') {
-    list = list.filter((p) => (p.stock || 0) <= 0);
-  }
-
-  // Price filters
-  const minP = options.minPrice ? Number(options.minPrice) : null;
-  const maxP = options.maxPrice ? Number(options.maxPrice) : null;
-  if (minP !== null && !isNaN(minP)) {
-    list = list.filter((p) => p.price >= minP);
-  }
-  if (maxP !== null && !isNaN(maxP)) {
-    list = list.filter((p) => p.price <= maxP);
-  }
-
-  // Sort
-  const sort = options.sort || 'newest';
-  list.sort((a, b) => {
-    switch (sort) {
-      case 'price-asc':
-        return a.price - b.price;
-      case 'price-desc':
-        return b.price - a.price;
-      case 'sales':
-        return (b.salesCount || 0) - (a.salesCount || 0);
-      case 'rating':
-        return (b.rating || 0) - (a.rating || 0);
-      case 'newest':
-      default:
-        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-    }
-  });
-
-  const total = list.length;
-  const page = Math.max(1, Number(options.page) || 1);
-  const limit = Math.max(1, Number(options.pageSize || options.limit) || 48);
-  const pages = Math.ceil(total / limit) || 1;
-  const startIndex = (page - 1) * limit;
-  const paginated = list.slice(startIndex, startIndex + limit).map((p) => {
-    const cat = p.categoryId ? categoryMap.get(p.categoryId) : null;
-    return {
-      ...p,
-      maxOrderQty: normalizeMaxOrderQtyValue(p.maxOrderQty),
-      category: cat ? { id: cat.id, name: cat.name, slug: cat.slug } : null,
-    };
-  });
-
-  return {
-    items: paginated,
-    total,
-    page,
-    limit,
-    pages,
-  };
-}
-
-export async function getShopProductBySlugServer(slug: string): Promise<ShopProduct | null> {
-  const db = readDb();
-  const rawProducts: ShopProduct[] = db.shopProducts || [];
-  const categories: ShopCategory[] = db.shopCategories || [];
-  const categoryMap = new Map(categories.map((c) => [c.id, c]));
-
-  const product = rawProducts.find((p) => (p.slug === slug || p.id === slug) && p.isActive !== false);
-  if (!product) return null;
-
-  const cat = product.categoryId ? categoryMap.get(product.categoryId) : null;
-
-  // Find related products
-  const relatedList: RelatedProduct[] = rawProducts
-    .filter((p) => p.id !== product.id && p.isActive !== false && (p.categoryId === product.categoryId || p.brand === product.brand))
-    .slice(0, 4)
-    .map((p) => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      brand: p.brand,
-      price: p.price,
-      imageUrl: p.imageUrl,
-      stock: p.stock,
-      maxOrderQty: normalizeMaxOrderQtyValue(p.maxOrderQty),
-    }));
-
-  return {
-    ...product,
-    maxOrderQty: normalizeMaxOrderQtyValue(product.maxOrderQty),
-    category: cat ? { id: cat.id, name: cat.name, slug: cat.slug } : null,
-    related: relatedList as any,
-  };
-}
-
-// -------------------------------------------------------------
-// Cart, Shipping, Discounts & Orders
-// -------------------------------------------------------------
-
-export function getShopCartConfigServer(): ShopCartConfig {
-  return {
-    taxRate: 9, // 9% Iranian standard VAT
-    shippingCost: 250000, // 250,000 Tomans default
-    freeShippingThreshold: 5000000, // Free shipping above 5 million Tomans
-  };
-}
-
-export async function getShopShippingMethodsServer(): Promise<ShopShippingMethod[]> {
-  const db = readDb();
-  const methods: ShopShippingMethod[] = db.shopShippingMethods || [];
-  return methods.filter((m) => m.isActive !== false);
-}
-
-export async function validateShopDiscountServer(code: string, subtotal: number): Promise<ShopDiscount | null> {
-  if (!code || !code.trim()) return null;
-  const db = readDb();
-  const discounts: ShopDiscount[] = db.shopDiscounts || [];
-  const cleanCode = code.trim().toUpperCase();
-  const match = discounts.find((d) => d.code.toUpperCase() === cleanCode && d.isActive !== false);
-  if (!match) return null;
-  if (match.minOrderAmount && subtotal < match.minOrderAmount) {
-    return null;
-  }
-  return match;
-}
-
-export async function validateCartItemsServer(
-  items: { productId: string; quantity: number }[],
-): Promise<{
-  valid: boolean;
-  message?: string;
-  aggregatedItems: { product: ShopProduct; quantity: number }[];
-}> {
-  const db = readDb();
-  const products: ShopProduct[] = db.shopProducts || [];
-
-  if (!Array.isArray(items) || items.length === 0) {
-    return { valid: false, message: 'سبد خرید شما خالی است.', aggregatedItems: [] };
-  }
-
-  // Aggregate duplicate productId entries so a user cannot bypass maxOrderQty by splitting items
-  const qtyByProductId = new Map<string, { product: ShopProduct; quantity: number }>();
-
-  for (const item of items) {
-    const rawId = typeof item?.productId === 'string' ? item.productId.trim() : '';
-    const qty = Number(item?.quantity);
-    if (!rawId || !Number.isFinite(qty) || qty < 1 || !Number.isInteger(qty)) {
-      return { valid: false, message: 'تعداد یا شناسه محصول در سبد خرید نامعتبر است.', aggregatedItems: [] };
-    }
-
-    const product = products.find((p) => p.id === rawId || p.slug === rawId);
-    if (!product || product.isActive === false) {
-      return { valid: false, message: `محصول مورد نظر با شناسه ${rawId} یافت نشد یا غیرفعال است.`, aggregatedItems: [] };
-    }
-
-    const existing = qtyByProductId.get(product.id);
-    qtyByProductId.set(product.id, {
-      product,
-      quantity: (existing?.quantity ?? 0) + qty,
-    });
-  }
-
-  const aggregatedItems: { product: ShopProduct; quantity: number }[] = [];
-
-  for (const { product, quantity } of Array.from(qtyByProductId.values())) {
-    const maxOrderQty = normalizeMaxOrderQtyValue(product.maxOrderQty);
-    if (maxOrderQty !== null && quantity > maxOrderQty) {
-      return {
-        valid: false,
-        message: `حداکثر تعداد مجاز خرید برای کالای «${product.name}» ${maxOrderQty} عدد برای هر کاربر است.`,
-        aggregatedItems: [],
-      };
-    }
-
-    if (product.stock < quantity) {
-      return {
-        valid: false,
-        message: `موجودی کالای «${product.name}» کافی نیست (موجودی فعلی: ${product.stock} عدد).`,
-        aggregatedItems: [],
-      };
-    }
-
-    aggregatedItems.push({ product, quantity });
-  }
-
-  return { valid: true, aggregatedItems };
-}
 
 export type CreateOrderInput = {
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
   shippingAddress: string;
+  notes?: string;
+  items: Array<{
+    productId: string;
+    productName?: string;
+    quantity: number;
+    unitPrice?: number;
+    lineTotal?: number;
+  }>;
+  subtotal?: number;
+  shippingCost?: number;
+  discountTotal?: number;
+  discountCode?: string;
+  total?: number;
   firstName?: string;
   lastName?: string;
   province?: string;
   city?: string;
   postalCode?: string;
   shippingMethod?: string;
+  shippingMethodName?: string;
   needInvoice?: boolean;
-  companyName?: string;
   companyNationalId?: string;
   companyEconomicCode?: string;
   companyRegistrationNumber?: string;
+  companyName?: string;
   paymentMethod?: string;
-  discountCode?: string;
-  items: { productId: string; quantity: number }[];
+  paymentStatus?: 'unpaid' | 'paid' | 'failed';
+  paymentReference?: string;
 };
 
-export async function createShopOrderServer(payload: CreateOrderInput): Promise<ShopOrder> {
-  const validation = await validateCartItemsServer(payload.items);
-  if (!validation.valid) {
-    throw new Error(validation.message || 'محدودیت تعداد خرید رعایت نشده است.');
-  }
-
-  const db = readDb();
-  const products: ShopProduct[] = db.shopProducts || [];
-  const shippingMethods: ShopShippingMethod[] = db.shopShippingMethods || [];
-
-  // Validate items and calculate server-side pricing
-  const orderItems: ShopOrderItem[] = [];
-  let subtotal = 0;
-
-  const existingOrders: ShopOrder[] = db.shopOrders || [];
-  const normalizedPhone = (payload.customerPhone || '').trim().replace(/\s+/g, '');
-  const normalizedEmail = (payload.customerEmail || '').trim().toLowerCase();
-
-  for (const entry of validation.aggregatedItems) {
-    const product = products.find((p) => p.id === entry.product.id);
-    if (!product) {
-      throw new Error(`محصول مورد نظر در انبار یافت نشد.`);
-    }
-    const reqQty = entry.quantity;
-    const maxOrderQty = normalizeMaxOrderQtyValue(product.maxOrderQty);
-    if (maxOrderQty !== null) {
-      if (reqQty > maxOrderQty) {
-        throw new Error(`حداکثر تعداد مجاز خرید برای کالای «${product.name}» ${maxOrderQty} عدد برای هر مشتری است.`);
-      }
-      if (normalizedPhone || normalizedEmail) {
-        const previouslyPurchasedQty = existingOrders
-          .filter((o) => {
-            if (o.status === 'cancelled') return false;
-            const oPhone = (o.customerPhone || '').trim().replace(/\s+/g, '');
-            const oEmail = (o.customerEmail || '').trim().toLowerCase();
-            return (normalizedPhone && oPhone === normalizedPhone) || (normalizedEmail && oEmail === normalizedEmail);
-          })
-          .reduce((sum, o) => {
-            const matchingQty = (o.items || [])
-              .filter((item) => item.productId === product.id)
-              .reduce((s, item) => s + (Number(item.quantity) || 0), 0);
-            return sum + matchingQty;
-          }, 0);
-
-        if (previouslyPurchasedQty + reqQty > maxOrderQty) {
-          const remaining = Math.max(0, maxOrderQty - previouslyPurchasedQty);
-          throw new Error(
-            remaining > 0
-              ? `سقف خرید کالای «${product.name}» برای هر مشتری ${maxOrderQty} عدد است. شما قبلاً ${previouslyPurchasedQty} عدد سفارش داده‌اید و حداکثر ${remaining} عدد دیگر می‌توانید سفارش دهید.`
-              : `سقف مجاز خرید کالای «${product.name}» (${maxOrderQty} عدد برای هر مشتری) توسط شما تکمیل شده است.`,
-          );
+function mapProduct(p: any): ShopProduct {
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    description: p.description || '',
+    shortDescription: p.shortDescription || '',
+    technicalSpecifications: p.technicalSpecifications || '',
+    categoryId: p.categoryId || null,
+    brand: p.brand || '',
+    sku: p.sku || '',
+    price: Number(p.price) || 0,
+    oldPrice: p.oldPrice ? Number(p.oldPrice) : null,
+    discountPercent: p.discountPercent || 0,
+    stock: p.stock ?? 0,
+    maxOrderQty: p.maxOrderQty ?? null,
+    salesCount: p.salesCount || 0,
+    imageUrl: p.imageUrl || '',
+    gallery: Array.isArray(p.gallery) ? p.gallery : [],
+    isActive: p.isActive !== false,
+    isFeatured: Boolean(p.isFeatured),
+    rating: Number(p.rating) || 5,
+    reviewCount: p.reviewCount || 0,
+    attributes: p.attributes && typeof p.attributes === 'object' ? p.attributes : undefined,
+    category: p.category
+      ? {
+          id: p.category.id,
+          name: p.category.name,
+          slug: p.category.slug,
         }
-      }
-    }
-    if (product.stock < reqQty) {
-      throw new Error(`موجودی کالای "${product.name}" کافی نیست (موجودی فعلی: ${product.stock} عدد).`);
-    }
-
-    const unitPrice = product.price;
-    const lineTotal = unitPrice * reqQty;
-    subtotal += lineTotal;
-
-    orderItems.push({
-      id: `oi-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      productId: product.id,
-      productName: product.name,
-      quantity: reqQty,
-      unitPrice,
-      lineTotal,
-      product: {
-        id: product.id,
-        name: product.name,
-        imageUrl: product.imageUrl,
-        slug: product.slug,
-        brand: product.brand,
-      },
-    });
-
-    // Deduct stock and increment sales count
-    product.stock = Math.max(0, product.stock - reqQty);
-    product.salesCount = (product.salesCount || 0) + reqQty;
-    product.updatedAt = new Date().toISOString();
-  }
-
-  // Resolve shipping
-  const selectedShip = shippingMethods.find((m) => m.code === payload.shippingMethod || m.id === payload.shippingMethod) || shippingMethods[0];
-  const config = getShopCartConfigServer();
-  const shippingCost = config.freeShippingThreshold > 0 && subtotal >= config.freeShippingThreshold ? 0 : (selectedShip ? Number(selectedShip.price) : config.shippingCost);
-
-  // Discount
-  let discountTotal = 0;
-  if (payload.discountCode) {
-    const discount = await validateShopDiscountServer(payload.discountCode, subtotal);
-    if (discount) {
-      discountTotal = discount.type === 'fixed' ? Math.min(subtotal, discount.value) : Math.round((subtotal * discount.value) / 100);
-    }
-  }
-
-  const taxableAmount = Math.max(0, subtotal - discountTotal);
-  const tax = Math.round((taxableAmount * config.taxRate) / 100);
-  const total = taxableAmount + tax + shippingCost;
-
-  const rand5 = Math.floor(10000 + Math.random() * 90000);
-  const orderNumber = `RAD-${rand5}`;
-  const trackingCode = `TRK-${rand5}-RDN`;
-
-  const newOrder: ShopOrder = {
-    id: `ord-${Date.now()}-${rand5}`,
-    orderNumber,
-    customerName: payload.customerName.trim(),
-    customerPhone: payload.customerPhone.trim(),
-    customerEmail: payload.customerEmail ? payload.customerEmail.trim() : '',
-    shippingAddress: payload.shippingAddress.trim(),
-    province: payload.province,
-    city: payload.city,
-    postalCode: payload.postalCode,
-    shippingMethod: selectedShip?.code || 'truck',
-    shippingMethodName: selectedShip?.name || 'ارسال استاندارد رادینت',
-    shippingCost,
-    needInvoice: Boolean(payload.needInvoice),
-    companyName: payload.companyName,
-    companyNationalId: payload.companyNationalId,
-    companyEconomicCode: payload.companyEconomicCode,
-    companyRegistrationNumber: payload.companyRegistrationNumber,
-    paymentMethod: payload.paymentMethod || 'gateway',
-    paymentStatus: payload.paymentMethod === 'gateway' ? 'paid' : 'pending',
-    status: 'processing',
-    trackingCode,
-    subtotal,
-    discountTotal,
-    tax,
-    total,
-    items: orderItems,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+      : null,
+    createdAt: p.createdAt || new Date().toISOString(),
+    updatedAt: p.updatedAt || new Date().toISOString(),
   };
+}
 
-  db.shopOrders = [newOrder, ...(db.shopOrders || [])];
-  writeDb(db);
+export async function getShopCategoriesServer(): Promise<ShopCategory[]> {
+  try {
+    const res = await fetch(`${backendUrl}/shop/categories`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+  } catch (err) {
+    console.error('Error fetching categories from backend:', err);
+  }
+  return [];
+}
 
-  return newOrder;
+export async function getShopCategoryBySlugServer(slug: string): Promise<ShopCategory | null> {
+  try {
+    const res = await fetch(`${backendUrl}/shop/categories/${encodeURIComponent(slug)}`, { cache: 'no-store' });
+    if (res.ok) {
+      return res.json();
+    }
+  } catch (err) {
+    console.error('Error fetching category by slug:', err);
+  }
+  return null;
+}
+
+export async function getShopBrandsServer(): Promise<string[]> {
+  try {
+    const res = await fetch(`${backendUrl}/shop/products/brands`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+  } catch {}
+  return ['سیمنس', 'فیلیپس', 'ج‌ای', 'رادینت', 'بارکو', 'کرستریم'];
+}
+
+export async function getShopCartConfigServer(): Promise<ShopCartConfig> {
+  try {
+    const res = await fetch(`${backendUrl}/shop/cart/config`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        taxRate: Number(data.taxRate ?? 0),
+        shippingCost: Number(data.shippingCost ?? 0),
+        freeShippingThreshold: Number(data.freeShippingThreshold ?? 0),
+      };
+    }
+  } catch {}
+  return { taxRate: 0, shippingCost: 0, freeShippingThreshold: 0 };
+}
+
+export async function getShopProductsServer(options: ProductFilterOptions = {}): Promise<ProductListResponse> {
+  const pageNum = Math.max(Number(options.page) || 1, 1);
+  const limitNum = Math.max(Number(options.limit) || 12, 1);
+
+  try {
+    const q = new URLSearchParams();
+    if (options.search) q.set('search', options.search);
+    if (options.categorySlug) q.set('categorySlug', options.categorySlug);
+    if (options.category) q.set('categorySlug', options.category);
+    if (options.brands) q.set('brands', options.brands);
+    if (options.sort) q.set('sort', options.sort);
+    if (options.featured) q.set('featured', 'true');
+    if (options.page) q.set('page', String(pageNum));
+    if (options.limit) q.set('pageSize', String(limitNum));
+    if (options.minPrice) q.set('minPrice', String(options.minPrice));
+    if (options.maxPrice) q.set('maxPrice', String(options.maxPrice));
+    if (options.inStock) q.set('inStock', 'true');
+    if (options.outOfStock) q.set('outOfStock', 'true');
+    const qs = q.toString();
+
+    const res = await fetch(`${backendUrl}/shop/products${qs ? `?${qs}` : ''}`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      const rawItems = Array.isArray(data) ? data : data.items || [];
+      const items = rawItems.map(mapProduct);
+      const total = data.total ?? items.length;
+      return {
+        items,
+        total,
+        page: pageNum,
+        limit: limitNum,
+        pages: data.pages ?? Math.max(Math.ceil(total / limitNum), 1),
+      };
+    }
+  } catch (err) {
+    console.error('Error fetching products from backend:', err);
+  }
+  return { items: [], total: 0, page: pageNum, limit: limitNum, pages: 1 };
+}
+
+export async function getShopProductBySlugServer(slug: string): Promise<(ShopProduct & { related?: ShopProduct[] }) | null> {
+  try {
+    const res = await fetch(`${backendUrl}/shop/products/${encodeURIComponent(slug)}`, { cache: 'no-store' });
+    if (res.ok) {
+      const p = await res.json();
+      const mapped = mapProduct(p);
+      return {
+        ...mapped,
+        related: Array.isArray(p.related) ? p.related.map(mapProduct) : [],
+      };
+    }
+  } catch (err) {
+    console.error('Error fetching product by slug:', err);
+  }
+  return null;
+}
+
+export async function getShopShippingMethodsServer(): Promise<ShopShippingMethod[]> {
+  try {
+    const res = await fetch(`${backendUrl}/shop/shipping-methods`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      return (data || []).map((s: any) => ({
+        id: s.id,
+        code: s.code,
+        name: s.name,
+        description: s.description || '',
+        price: Number(s.price) || 0,
+        estimatedDays: s.estimatedDays || null,
+        iconKey: s.iconKey || 'truck',
+        isActive: s.isActive !== false,
+      }));
+    }
+  } catch (err) {
+    console.error('Error fetching shipping methods:', err);
+  }
+  return [];
+}
+
+export async function validateShopDiscountServer(code: string, _subtotal?: number): Promise<ShopDiscount | null> {
+  try {
+    const res = await fetch(`${backendUrl}/shop/discounts/${encodeURIComponent(code)}`, { cache: 'no-store' });
+    if (res.ok) {
+      const d = await res.json();
+      return {
+        id: d.id,
+        code: d.code,
+        description: d.description || '',
+        type: (d.type || 'percent') as 'percent' | 'fixed',
+        value: Number(d.value) || 0,
+        minOrderAmount: d.minOrderAmount !== null && d.minOrderAmount !== undefined ? Number(d.minOrderAmount) : undefined,
+        isActive: d.isActive !== false,
+      };
+    }
+  } catch (err) {
+    console.error('Error validating discount:', err);
+  }
+  return null;
+}
+
+export async function validateCartItemsServer(
+  items: Array<{ productId: string; quantity: number }>,
+): Promise<{ valid: boolean; message?: string }> {
+  try {
+    const res = await fetch(`${backendUrl}/shop/cart/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    });
+    if (res.ok) {
+      return { valid: true };
+    }
+    const err = await res.json().catch(() => ({}));
+    return { valid: false, message: err.message || 'اعتبارسنجی سبد خرید با خطا مواجه شد' };
+  } catch {
+    return { valid: true };
+  }
+}
+
+export async function createShopOrderServer(payload: CreateOrderInput, auth?: string): Promise<ShopOrder> {
+  const res = await fetch(`${backendUrl}/shop/orders`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(auth ? { Authorization: auth } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) {
+    return res.json();
+  }
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.message || 'ثبت سفارش با خطا مواجه شد');
 }
 
 export async function getShopOrderByNumberServer(orderNumber: string): Promise<ShopOrder | null> {
-  const db = readDb();
-  const orders: ShopOrder[] = db.shopOrders || [];
-  const clean = orderNumber.trim().toUpperCase();
-  const found = orders.find((o) => o.orderNumber.toUpperCase() === clean || o.id === orderNumber || (o.trackingCode && o.trackingCode.toUpperCase() === clean));
-  return found || null;
+  try {
+    const res = await fetch(`${backendUrl}/shop/orders/${encodeURIComponent(orderNumber)}`, { cache: 'no-store' });
+    if (res.ok) {
+      return res.json();
+    }
+  } catch (err) {
+    console.error('Error fetching order by number:', err);
+  }
+  return null;
 }
 
 export async function getShopOrdersByPhoneServer(phone: string): Promise<ShopOrder[]> {
-  const db = readDb();
-  const orders: ShopOrder[] = db.shopOrders || [];
-  const clean = phone.trim().replace(/\s+/g, '');
-  return orders.filter((o) => o.customerPhone.replace(/\s+/g, '').includes(clean));
-}
-
-// -------------------------------------------------------------
-// Admin APIs (Products & Orders)
-// -------------------------------------------------------------
-
-export async function adminListShopProductsServer(options: {
-  page?: number | string;
-  limit?: number | string;
-  categoryId?: string;
-  status?: string;
-  sort?: string;
-  search?: string;
-}): Promise<ProductListResponse> {
-  const db = readDb();
-  const rawProducts: ShopProduct[] = db.shopProducts || [];
-  const categories: ShopCategory[] = db.shopCategories || [];
-  const categoryMap = new Map(categories.map((c) => [c.id, c]));
-
-  let list = [...rawProducts];
-
-  if (options.categoryId && options.categoryId !== 'all') {
-    list = list.filter((p) => p.categoryId === options.categoryId);
-  }
-
-  if (options.status && options.status !== 'all') {
-    if (options.status === 'active') list = list.filter((p) => p.isActive);
-    if (options.status === 'inactive') list = list.filter((p) => !p.isActive);
-    if (options.status === 'in_stock') list = list.filter((p) => (p.stock || 0) > 0);
-    if (options.status === 'out_of_stock') list = list.filter((p) => (p.stock || 0) <= 0);
-  }
-
-  if (options.search && options.search.trim()) {
-    const q = options.search.trim().toLowerCase();
-    list = list.filter((p) => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
-  }
-
-  // Sort
-  if (options.sort === 'price-asc') list.sort((a, b) => a.price - b.price);
-  else if (options.sort === 'price-desc') list.sort((a, b) => b.price - a.price);
-  else if (options.sort === 'sales') list.sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0));
-  else list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-  const total = list.length;
-  const page = Math.max(1, Number(options.page) || 1);
-  const limit = Math.max(1, Number(options.limit) || 10);
-  const pages = Math.ceil(total / limit) || 1;
-  const startIndex = (page - 1) * limit;
-
-  const paginated = list.slice(startIndex, startIndex + limit).map((p) => {
-    const cat = p.categoryId ? categoryMap.get(p.categoryId) : null;
-    return {
-      ...p,
-      maxOrderQty: normalizeMaxOrderQtyValue(p.maxOrderQty),
-      category: cat ? { id: cat.id, name: cat.name, slug: cat.slug } : null,
-    };
-  });
-
-  return {
-    items: paginated,
-    total,
-    page,
-    limit,
-    pages,
-  };
-}
-
-export async function adminCreateShopProductServer(payload: Partial<ShopProduct>): Promise<ShopProduct> {
-  const db = readDb();
-  const products: ShopProduct[] = db.shopProducts || [];
-
-  const name = (payload.name || '').trim();
-  if (!name) throw new Error('نام محصول الزامی است.');
-
-  const slug = (payload.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `prod-${Date.now()}`);
-  const id = `prod-${Date.now()}`;
-
-  const newProduct: ShopProduct = {
-    id,
-    name,
-    slug,
-    description: payload.description || '',
-    shortDescription: payload.shortDescription || '',
-    technicalSpecifications: payload.technicalSpecifications || '{}',
-    categoryId: payload.categoryId || null,
-    brand: payload.brand || 'Radinet',
-    sku: payload.sku || `SKU-${Date.now()}`,
-    price: Math.max(0, Number(payload.price) || 0),
-    oldPrice: payload.oldPrice ? Number(payload.oldPrice) : null,
-    discountPercent: Number(payload.discountPercent) || 0,
-    stock: Math.max(0, Number(payload.stock) || 0),
-    maxOrderQty: normalizeMaxOrderQtyValue(payload.maxOrderQty),
-    salesCount: 0,
-    imageUrl: payload.imageUrl || 'https://images.pexels.com/photos/13704354/pexels-photo-13704354.jpeg?auto=compress&cs=tinysrgb&h=600&w=600',
-    gallery: Array.isArray(payload.gallery) && payload.gallery.length > 0 ? payload.gallery : [payload.imageUrl || ''],
-    isActive: payload.isActive !== false,
-    isFeatured: Boolean(payload.isFeatured),
-    rating: 9.0,
-    reviewCount: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  db.shopProducts = [newProduct, ...products];
-  writeDb(db);
-  return newProduct;
-}
-
-export async function adminUpdateShopProductServer(id: string, payload: Partial<ShopProduct>): Promise<ShopProduct> {
-  const db = readDb();
-  const products: ShopProduct[] = db.shopProducts || [];
-  const index = products.findIndex((p) => p.id === id || p.slug === id);
-  if (index === -1) throw new Error('محصول مورد نظر یافت نشد.');
-
-  const existing = products[index];
-  const updated: ShopProduct = {
-    ...existing,
-    ...payload,
-    price: payload.price !== undefined ? Math.max(0, Number(payload.price)) : existing.price,
-    stock: payload.stock !== undefined ? Math.max(0, Number(payload.stock)) : existing.stock,
-    maxOrderQty:
-      payload.maxOrderQty !== undefined
-        ? normalizeMaxOrderQtyValue(payload.maxOrderQty)
-        : normalizeMaxOrderQtyValue(existing.maxOrderQty),
-    gallery:
-      payload.imageUrl && (!Array.isArray(payload.gallery) || payload.gallery.length === 0)
-        ? [payload.imageUrl]
-        : (payload.gallery ?? existing.gallery),
-    updatedAt: new Date().toISOString(),
-  };
-
-  products[index] = updated;
-  db.shopProducts = products;
-  writeDb(db);
-  return updated;
-}
-
-export async function adminDeleteShopProductServer(id: string): Promise<boolean> {
-  const db = readDb();
-  const products: ShopProduct[] = db.shopProducts || [];
-  const index = products.findIndex((p) => p.id === id || p.slug === id);
-  if (index === -1) return false;
-  products.splice(index, 1);
-  db.shopProducts = products;
-  writeDb(db);
-  return true;
-}
-
-export async function adminListShopOrdersServer(options: {
-  page?: number | string;
-  limit?: number | string;
-  status?: string;
-  paymentStatus?: string;
-  search?: string;
-}): Promise<OrderListResponse> {
-  const db = readDb();
-  let list: ShopOrder[] = [...(db.shopOrders || [])];
-
-  if (options.status && options.status !== 'all') {
-    list = list.filter((o) => o.status === options.status);
-  }
-
-  if (options.paymentStatus && options.paymentStatus !== 'all') {
-    list = list.filter((o) => o.paymentStatus === options.paymentStatus);
-  }
-
-  if (options.search && options.search.trim()) {
-    const q = options.search.trim().toLowerCase();
-    list = list.filter((o) => o.orderNumber.toLowerCase().includes(q) || o.customerName.toLowerCase().includes(q) || o.customerPhone.includes(q) || (o.trackingCode && o.trackingCode.toLowerCase().includes(q)));
-  }
-
-  list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-  const total = list.length;
-  const page = Math.max(1, Number(options.page) || 1);
-  const limit = Math.max(1, Number(options.limit) || 20);
-  const pages = Math.ceil(total / limit) || 1;
-  const startIndex = (page - 1) * limit;
-
-  return {
-    items: list.slice(startIndex, startIndex + limit),
-    total,
-    page,
-    limit,
-    pages,
-  };
-}
-
-export async function adminGetOrderStatsServer(): Promise<OrderStatsResponse> {
-  const db = readDb();
-  const orders: ShopOrder[] = db.shopOrders || [];
-
-  const byStatus = {
-    pending: 0,
-    processing: 0,
-    readyToShip: 0,
-    shipped: 0,
-    delivered: 0,
-    cancelled: 0,
-  };
-
-  let revenue = 0;
-
-  orders.forEach((o) => {
-    if (o.status === 'pending') byStatus.pending++;
-    else if (o.status === 'processing') byStatus.processing++;
-    else if (o.status === 'ready' || o.status === 'ready_to_ship') byStatus.readyToShip++;
-    else if (o.status === 'shipped') byStatus.shipped++;
-    else if (o.status === 'delivered') byStatus.delivered++;
-    else if (o.status === 'cancelled') byStatus.cancelled++;
-
-    if (o.paymentStatus === 'paid') {
-      revenue += Number(o.total) || 0;
+  try {
+    const res = await fetch(`${backendUrl}/shop/orders/phone/${encodeURIComponent(phone)}`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     }
-  });
+  } catch (err) {
+    console.error('Error fetching orders by phone:', err);
+  }
+  return [];
+}
 
+export async function adminListShopProductsServer(
+  options: ProductFilterOptions = {},
+  auth?: string,
+): Promise<ProductListResponse> {
+  const pageNum = Math.max(Number(options.page) || 1, 1);
+  const limitNum = Math.max(Number(options.limit) || 20, 1);
+
+  if (auth) {
+    try {
+      const q = new URLSearchParams();
+      if (options.search) q.set('search', options.search);
+      if (options.categorySlug) q.set('categorySlug', options.categorySlug);
+      if (options.category) q.set('categorySlug', options.category);
+      if (options.status) q.set('status', options.status);
+      if (options.sort) q.set('sort', options.sort);
+      if (options.page) q.set('page', String(pageNum));
+      if (options.limit) q.set('limit', String(limitNum));
+      const qs = q.toString();
+
+      const res = await fetch(`${backendUrl}/admin/shop/products${qs ? `?${qs}` : ''}`, {
+        headers: { Authorization: auth },
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const rawItems = Array.isArray(data) ? data : data.items || [];
+        const items = rawItems.map(mapProduct);
+        const total = data.total ?? items.length;
+        return {
+          items,
+          total,
+          page: data.page ?? pageNum,
+          limit: data.limit ?? limitNum,
+          pages: data.pages ?? Math.max(Math.ceil(total / limitNum), 1),
+        };
+      }
+    } catch (err) {
+      console.error('Error listing admin products:', err);
+    }
+  }
+  return getShopProductsServer(options);
+}
+
+export async function adminCreateShopProductServer(payload: Partial<ShopProduct>, auth?: string): Promise<ShopProduct> {
+  const res = await fetch(`${backendUrl}/admin/shop/products`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(auth ? { Authorization: auth } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) {
+    const p = await res.json();
+    return mapProduct(p);
+  }
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.message || 'ایجاد محصول با خطا مواجه شد');
+}
+
+export async function adminUpdateShopProductServer(
+  id: string,
+  payload: Partial<ShopProduct>,
+  auth?: string,
+): Promise<ShopProduct> {
+  const res = await fetch(`${backendUrl}/admin/shop/products/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(auth ? { Authorization: auth } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) {
+    const p = await res.json();
+    return mapProduct(p);
+  }
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.message || 'بروزرسانی محصول با خطا مواجه شد');
+}
+
+export async function adminDeleteShopProductServer(id: string, auth?: string): Promise<boolean> {
+  const res = await fetch(`${backendUrl}/admin/shop/products/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: auth ? { Authorization: auth } : {},
+  });
+  return res.ok;
+}
+
+export async function adminListShopOrdersServer(
+  options: {
+    status?: string;
+    paymentStatus?: string;
+    search?: string;
+    page?: number | string;
+    limit?: number | string;
+  },
+  auth?: string,
+): Promise<OrderListResponse> {
+  try {
+    const q = new URLSearchParams();
+    if (options.status) q.set('status', options.status);
+    if (options.paymentStatus) q.set('paymentStatus', options.paymentStatus);
+    if (options.search) q.set('search', options.search);
+    if (options.page) q.set('page', String(options.page));
+    if (options.limit) q.set('limit', String(options.limit));
+    const qs = q.toString();
+
+    const res = await fetch(`${backendUrl}/admin/orders${qs ? `?${qs}` : ''}`, {
+      headers: auth ? { Authorization: auth } : {},
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        items: data.items || [],
+        total: data.total ?? 0,
+        page: data.page ?? (Number(options.page) || 1),
+        limit: data.limit ?? (Number(options.limit) || 20),
+        pages: data.pages ?? 1,
+      };
+    }
+  } catch (err) {
+    console.error('Error listing orders from backend:', err);
+  }
+  return { items: [], total: 0, page: 1, limit: 20, pages: 1 };
+}
+
+export async function adminGetOrderStatsServer(auth?: string): Promise<OrderStatsResponse> {
+  try {
+    const res = await fetch(`${backendUrl}/admin/orders/stats/summary`, {
+      headers: auth ? { Authorization: auth } : {},
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        total: Number(data.total ?? 0),
+        byStatus: {
+          pending: Number(data.byStatus?.pending ?? 0),
+          processing: Number(data.byStatus?.processing ?? 0),
+          readyToShip: Number(data.byStatus?.readyToShip ?? 0),
+          shipped: Number(data.byStatus?.shipped ?? 0),
+          delivered: Number(data.byStatus?.delivered ?? 0),
+          cancelled: Number(data.byStatus?.cancelled ?? 0),
+        },
+        revenue: Number(data.revenue ?? data.paidRevenue ?? 0),
+        paidRevenue: Number(data.paidRevenue ?? 0),
+      };
+    }
+  } catch (err) {
+    console.error('Error fetching order stats from backend:', err);
+  }
   return {
-    total: orders.length,
-    byStatus,
-    revenue,
-    paidRevenue: revenue,
+    total: 0,
+    byStatus: {
+      pending: 0,
+      processing: 0,
+      readyToShip: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0,
+    },
+    revenue: 0,
+    paidRevenue: 0,
   };
 }
 
 export async function adminUpdateOrderStatusServer(
-  orderNumberOrId: string,
+  orderNumber: string,
   status: string,
   trackingCode?: string,
-  paymentStatus?: string
+  paymentStatus?: string,
+  auth?: string,
 ): Promise<ShopOrder> {
-  const db = readDb();
-  const orders: ShopOrder[] = db.shopOrders || [];
-  const index = orders.findIndex((o) => o.orderNumber === orderNumberOrId || o.id === orderNumberOrId);
-  if (index === -1) throw new Error('سفارش مورد نظر یافت نشد.');
-
-  const existing = orders[index];
-  const updated: ShopOrder = {
-    ...existing,
-    status: status as any,
-    paymentStatus: paymentStatus !== undefined ? (paymentStatus as any) : existing.paymentStatus,
-    trackingCode: trackingCode !== undefined ? (trackingCode.trim() || null) : existing.trackingCode,
-    updatedAt: new Date().toISOString(),
-  };
-
-  orders[index] = updated;
-  db.shopOrders = orders;
-  writeDb(db);
-  return updated;
-}
-
-// -------------------------------------------------------------
-// Product Reviews & Admin Review Moderation
-// -------------------------------------------------------------
-
-function recalculateProductRatingInDb(db: any, productId: string): void {
-  const products: ShopProduct[] = db.shopProducts || [];
-  const reviews: ProductReview[] = db.productReviews || [];
-  const pIndex = products.findIndex((p) => p.id === productId || p.slug === productId);
-  if (pIndex === -1) return;
-
-  const prod = products[pIndex];
-  const approved = reviews.filter(
-    (r) => (r.productId === prod.id || r.productSlug === prod.slug) && r.status === 'approved',
-  );
-  prod.reviewCount = approved.length;
-  if (approved.length > 0) {
-    const avg5 = approved.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / approved.length;
-    prod.rating = Number((avg5 * 2).toFixed(1));
+  const res = await fetch(`${backendUrl}/admin/orders/${encodeURIComponent(orderNumber)}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(auth ? { Authorization: auth } : {}),
+    },
+    body: JSON.stringify({ status, trackingCode, paymentStatus }),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    return data?.order || data;
   }
-  products[pIndex] = prod;
-  db.shopProducts = products;
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.message || 'بروزرسانی وضعیت سفارش ناموفق بود');
 }
 
 export async function getApprovedProductReviewsServer(
-  productIdOrSlug: string,
+  productSlug: string,
 ): Promise<{ items: ProductReview[]; total: number }> {
-  const db = readDb();
-  const products: ShopProduct[] = db.shopProducts || [];
-  const reviews: ProductReview[] = db.productReviews || [];
-
-  const product = products.find((p) => p.id === productIdOrSlug || p.slug === productIdOrSlug);
-  const approved = reviews
-    .filter((r) => {
-      if (r.status !== 'approved') return false;
-      if (product) {
-        return r.productId === product.id || r.productSlug === product.slug || r.productId === product.slug;
-      }
-      return r.productId === productIdOrSlug || r.productSlug === productIdOrSlug;
-    })
-    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-    .map((r) => ({
-      id: r.id,
-      productId: r.productId,
-      productSlug: r.productSlug,
-      productName: r.productName,
-      userId: r.userId,
-      userName: r.userName,
-      rating: r.rating,
-      content: r.content,
-      createdAt: r.createdAt,
-    }));
-
-  return {
-    items: approved,
-    total: approved.length,
-  };
+  try {
+    const res = await fetch(`${backendUrl}/shop/products/${encodeURIComponent(productSlug)}/reviews`, {
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const items = Array.isArray(data) ? data : data.items || [];
+      return { items, total: data.total ?? items.length };
+    }
+  } catch {}
+  return { items: [], total: 0 };
 }
 
-export async function createProductReviewServer(input: {
-  userId: string;
-  userName: string;
-  userEmail?: string;
-  productIdOrSlug: string;
-  rating: unknown;
-  content: unknown;
-}): Promise<{ id: string; status: 'pending'; message: string; review: ProductReview }> {
-  const db = readDb();
-  const products: ShopProduct[] = db.shopProducts || [];
-  const reviews: ProductReview[] = db.productReviews || [];
-
-  const product = products.find(
-    (p) => (p.id === input.productIdOrSlug || p.slug === input.productIdOrSlug) && p.isActive !== false,
-  );
-  if (!product) {
-    throw new Error('محصول مورد نظر یافت نشد.');
+export async function createProductReviewServer(
+  input: {
+    productSlug?: string;
+    productIdOrSlug?: string;
+    userName: string;
+    userEmail: string;
+    rating: number;
+    content: string;
+    userId?: string;
+  },
+  auth?: string,
+): Promise<ProductReview> {
+  const slug = input.productSlug || input.productIdOrSlug || '';
+  const res = await fetch(`${backendUrl}/shop/products/${encodeURIComponent(slug)}/reviews`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(auth ? { Authorization: auth } : {}),
+    },
+    body: JSON.stringify(input),
+  });
+  if (res.ok) {
+    return res.json();
   }
-
-  const rating = typeof input.rating === 'number' ? input.rating : Number(input.rating);
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    throw new Error('امتیاز باید عددی صحیح بین ۱ تا ۵ باشد.');
-  }
-
-  const rawContent = typeof input.content === 'string' ? input.content.trim() : '';
-  if (rawContent.length < 3) {
-    throw new Error('متن نظر باید حداقل ۳ کاراکتر باشد.');
-  }
-  if (rawContent.length > 2000) {
-    throw new Error('متن نظر نمی‌تواند بیشتر از ۲۰۰۰ کاراکتر باشد.');
-  }
-  if (/<script\b[^>]*>|javascript:|on\w+\s*=/i.test(rawContent)) {
-    throw new Error('متن نظر حاوی کاراکترها یا تگ‌های غیرمجاز است.');
-  }
-  const sanitizedContent = rawContent.replace(/<[^>]*>/g, '').trim();
-  if (sanitizedContent.length < 3) {
-    throw new Error('متن نظر معتبر نیست.');
-  }
-
-  const userProductReviews = reviews.filter(
-    (r) => r.userId === input.userId && (r.productId === product.id || r.productSlug === product.slug),
-  );
-  const pendingCount = userProductReviews.filter((r) => r.status === 'pending').length;
-  if (pendingCount >= 3) {
-    throw new Error('شما قبلاً چند نظر در انتظار تأیید برای این محصول ثبت کرده‌اید.');
-  }
-  const duplicate = userProductReviews.some(
-    (r) => r.content.trim().toLowerCase() === sanitizedContent.toLowerCase(),
-  );
-  if (duplicate) {
-    throw new Error('این نظر قبلاً توسط شما برای این محصول ثبت شده است.');
-  }
-
-  const newReview: ProductReview = {
-    id: `rev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    productId: product.id,
-    productSlug: product.slug,
-    productName: product.name,
-    userId: input.userId,
-    userName: input.userName || 'کاربر رادینت',
-    userEmail: input.userEmail || '',
-    rating,
-    content: sanitizedContent,
-    status: 'pending',
-    rejectReason: null,
-    reviewedBy: null,
-    reviewedAt: null,
-    createdAt: new Date().toISOString(),
-  };
-
-  db.productReviews = [newReview, ...reviews];
-  writeDb(db);
-
-  return {
-    id: newReview.id,
-    status: 'pending',
-    message: 'نظر شما با موفقیت ثبت شد و در وضعیت «در انتظار تأیید» قرار گرفت. پس از تأیید مدیریت در صفحه محصول نمایش داده خواهد شد.',
-    review: newReview,
-  };
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.message || 'ثبت نظر با خطا مواجه شد');
 }
 
-export async function adminListReviewsServer(options: {
-  status?: string;
-  search?: string;
-  page?: number | string;
-  limit?: number | string;
-} = {}): Promise<AdminReviewListResponse> {
-  const db = readDb();
-  const allReviews: ProductReview[] = db.productReviews || [];
+export async function adminListReviewsServer(
+  options: {
+    status?: string;
+    targetType?: string;
+    page?: number;
+    limit?: number;
+  },
+  auth?: string,
+): Promise<AdminReviewListResponse> {
+  try {
+    const q = new URLSearchParams();
+    if (options.status) q.set('status', options.status);
+    if (options.targetType) q.set('targetType', options.targetType);
+    if (options.page) q.set('page', String(options.page));
+    if (options.limit) q.set('limit', String(options.limit));
+    const qs = q.toString();
 
-  const counts = {
-    all: allReviews.length,
-    pending: allReviews.filter((r) => r.status === 'pending').length,
-    approved: allReviews.filter((r) => r.status === 'approved').length,
-    rejected: allReviews.filter((r) => r.status === 'rejected').length,
-  };
-
-  let list = [...allReviews];
-  if (options.status && options.status !== 'all') {
-    list = list.filter((r) => r.status === options.status);
+    const res = await fetch(`${backendUrl}/admin/reviews${qs ? `?${qs}` : ''}`, {
+      headers: auth ? { Authorization: auth } : {},
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        items: data.items || [],
+        total: data.total ?? 0,
+        page: data.page ?? 1,
+        limit: data.limit ?? 20,
+        pages: data.pages ?? 1,
+        counts: data.counts ?? { all: 0, pending: 0, approved: 0, rejected: 0 },
+      };
+    }
+  } catch (err) {
+    console.error('Error listing reviews:', err);
   }
-  if (options.search && options.search.trim()) {
-    const q = options.search.trim().toLowerCase();
-    list = list.filter(
-      (r) =>
-        r.content.toLowerCase().includes(q) ||
-        r.userName.toLowerCase().includes(q) ||
-        r.productName.toLowerCase().includes(q) ||
-        (r.userEmail && r.userEmail.toLowerCase().includes(q)),
-    );
-  }
-
-  list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-  const total = list.length;
-  const page = Math.max(1, Number(options.page) || 1);
-  const limit = Math.max(1, Number(options.limit) || 20);
-  const pages = Math.ceil(total / limit) || 1;
-  const startIndex = (page - 1) * limit;
-
   return {
-    items: list.slice(startIndex, startIndex + limit),
-    total,
-    page,
-    limit,
-    pages,
-    counts,
+    items: [],
+    total: 0,
+    page: 1,
+    limit: 20,
+    pages: 1,
+    counts: { all: 0, pending: 0, approved: 0, rejected: 0 },
   };
 }
 
 export async function getApprovedSupportReviewsServer(): Promise<{ items: ProductReview[]; total: number }> {
-  const db = readDb();
-  const reviews: ProductReview[] = db.productReviews || [];
-
-  const approved = reviews
-    .filter(
-      (r) =>
-        r.status === 'approved' &&
-        (r.targetType === 'support' || r.productId === 'support-center' || r.targetId === 'support-center'),
-    )
-    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-    .map((r) => ({
-      id: r.id,
-      productId: r.productId || 'support-center',
-      productSlug: '',
-      productName: r.productName || 'بخش پشتیبانی رادینت',
-      targetType: 'support',
-      targetId: 'support-center',
-      targetName: 'بخش پشتیبانی رادینت',
-      userId: r.userId,
-      userName: r.userName,
-      rating: r.rating,
-      content: r.content,
-      createdAt: r.createdAt,
-    }));
-
-  return {
-    items: approved,
-    total: approved.length,
-  };
+  try {
+    const res = await fetch(`${backendUrl}/shop/support-reviews`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      const items = Array.isArray(data) ? data : data.items || [];
+      return { items, total: data.total ?? items.length };
+    }
+  } catch {}
+  return { items: [], total: 0 };
 }
 
-export async function createSupportReviewServer(input: {
-  userId: string;
-  userName: string;
-  userEmail?: string;
-  rating: unknown;
-  content: unknown;
-}): Promise<{ id: string; status: 'pending'; message: string; review: ProductReview }> {
-  const db = readDb();
-  const reviews: ProductReview[] = db.productReviews || [];
-
-  const rating = typeof input.rating === 'number' ? input.rating : Number(input.rating);
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    throw new Error('امتیاز باید عددی صحیح بین ۱ تا ۵ باشد.');
+export async function createSupportReviewServer(
+  input: {
+    userName: string;
+    userEmail: string;
+    rating: number;
+    content: string;
+    userId?: string;
+  },
+  auth?: string,
+): Promise<ProductReview> {
+  const res = await fetch(`${backendUrl}/shop/support-reviews`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(auth ? { Authorization: auth } : {}),
+    },
+    body: JSON.stringify(input),
+  });
+  if (res.ok) {
+    return res.json();
   }
-
-  const rawContent = typeof input.content === 'string' ? input.content.trim() : '';
-  if (rawContent.length < 3) {
-    throw new Error('متن نظر باید حداقل ۳ کاراکتر باشد.');
-  }
-  if (rawContent.length > 2000) {
-    throw new Error('متن نظر نمی‌تواند بیشتر از ۲۰۰۰ کاراکتر باشد.');
-  }
-  if (/<script\b[^>]*>|javascript:|on\w+\s*=/i.test(rawContent)) {
-    throw new Error('متن نظر حاوی کاراکترها یا تگ‌های غیرمجاز است.');
-  }
-  const sanitizedContent = rawContent.replace(/<[^>]*>/g, '').trim();
-  if (sanitizedContent.length < 3) {
-    throw new Error('متن نظر معتبر نیست.');
-  }
-
-  const userSupportReviews = reviews.filter(
-    (r) =>
-      r.userId === input.userId &&
-      (r.targetType === 'support' || r.productId === 'support-center' || r.targetId === 'support-center'),
-  );
-  const pendingCount = userSupportReviews.filter((r) => r.status === 'pending').length;
-  if (pendingCount >= 3) {
-    throw new Error('شما قبلاً چند نظر در انتظار تأیید در بخش پشتیبانی ثبت کرده‌اید.');
-  }
-  const duplicate = userSupportReviews.some(
-    (r) => r.content.trim().toLowerCase() === sanitizedContent.toLowerCase(),
-  );
-  if (duplicate) {
-    throw new Error('این نظر قبلاً توسط شما ثبت شده است.');
-  }
-
-  const newReview: ProductReview = {
-    id: `rev-sup-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    productId: 'support-center',
-    productSlug: '',
-    productName: 'بخش پشتیبانی رادینت',
-    targetType: 'support',
-    targetId: 'support-center',
-    targetName: 'بخش پشتیبانی رادینت',
-    userId: input.userId,
-    userName: input.userName || 'کاربر رادینت',
-    userEmail: input.userEmail || '',
-    rating,
-    content: sanitizedContent,
-    status: 'pending',
-    rejectReason: null,
-    reviewedBy: null,
-    reviewedAt: null,
-    createdAt: new Date().toISOString(),
-  };
-
-  db.productReviews = [newReview, ...reviews];
-  writeDb(db);
-
-  return {
-    id: newReview.id,
-    status: 'pending',
-    message: 'نظر شما با موفقیت ثبت شد و با وضعیت «در انتظار تأیید» به بخش مدیریت نظرات ارسال گردید. پس از تأیید ادمین در صفحه پشتیبانی نمایش داده خواهد شد.',
-    review: newReview,
-  };
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.message || 'ثبت نظر پشتیبانی با خطا مواجه شد');
 }
 
 export async function adminUpdateReviewStatusServer(
   id: string,
-  payload: {
-    status: 'approved' | 'rejected' | 'pending';
-    rejectReason?: string;
-    reviewedBy?: string;
-  },
-): Promise<ProductReview> {
-  const db = readDb();
-  const reviews: ProductReview[] = db.productReviews || [];
-  const index = reviews.findIndex((r) => r.id === id);
-  if (index === -1) {
-    throw new Error('نظر مورد نظر یافت نشد.');
-  }
+  statusOrInput:
+    | 'approved'
+    | 'rejected'
+    | { status: 'approved' | 'rejected'; rejectReason?: string; reviewedBy?: string },
+  rejectReasonOrAuth?: string,
+  maybeAuth?: string,
+): Promise<ProductReview | null> {
+  const isObj = typeof statusOrInput === 'object';
+  const status = isObj ? statusOrInput.status : statusOrInput;
+  const rejectReason = isObj ? statusOrInput.rejectReason : rejectReasonOrAuth;
+  const auth = isObj ? rejectReasonOrAuth : maybeAuth;
 
-  if (!['approved', 'rejected', 'pending'].includes(payload.status)) {
-    throw new Error('وضعیت نامعتبر است.');
-  }
-
-  const existing = reviews[index];
-
-  // Requirement 8: در صورت رد شدن نظر توسط ادمین (rejected)، آن نظر از دیتابیس حذف شود و دیگر در سایت نمایش داده نشود.
-  if (payload.status === 'rejected') {
-    reviews.splice(index, 1);
-    db.productReviews = reviews;
-    if (existing.productId && existing.productId !== 'support-center') {
-      recalculateProductRatingInDb(db, existing.productId);
+  try {
+    const res = await fetch(`${backendUrl}/admin/reviews/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth ? { Authorization: auth } : {}),
+      },
+      body: JSON.stringify({ status, rejectReason }),
+    });
+    if (res.ok) {
+      return res.json();
     }
-    writeDb(db);
-    return {
-      ...existing,
-      status: 'rejected',
-      rejectReason: payload.rejectReason?.trim() || null,
-      reviewedBy: payload.reviewedBy || 'مدیر سامانه',
-      reviewedAt: new Date().toISOString(),
-      deleted: true,
-    };
+  } catch (err) {
+    console.error('Error updating review status:', err);
   }
-
-  const updated: ProductReview = {
-    ...existing,
-    status: payload.status,
-    rejectReason: null,
-    reviewedBy: payload.reviewedBy || 'مدیر سامانه',
-    reviewedAt: new Date().toISOString(),
-  };
-
-  reviews[index] = updated;
-  db.productReviews = reviews;
-  if (existing.productId && existing.productId !== 'support-center') {
-    recalculateProductRatingInDb(db, existing.productId);
-  }
-  writeDb(db);
-
-  return updated;
+  return null;
 }
 
-export async function adminDeleteReviewServer(id: string): Promise<boolean> {
-  const db = readDb();
-  const reviews: ProductReview[] = db.productReviews || [];
-  const index = reviews.findIndex((r) => r.id === id);
-  if (index === -1) {
-    throw new Error('نظر مورد نظر یافت نشد.');
+export async function adminDeleteReviewServer(id: string, auth?: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${backendUrl}/admin/reviews/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: auth ? { Authorization: auth } : {},
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
-
-  const removed = reviews[index];
-  reviews.splice(index, 1);
-  db.productReviews = reviews;
-  recalculateProductRatingInDb(db, removed.productId);
-  writeDb(db);
-
-  return true;
 }
-

@@ -329,7 +329,7 @@ export function ReferralsPage() {
                 <table className="referrals-table">
                   <thead>
                     <tr>
-                      <th><input type="checkbox" checked={Boolean(data?.items?.length) && selected.length === data.items.length} onChange={toggleAll} /></th>
+                      <th><input type="checkbox" checked={Boolean(data?.items?.length) && selected.length === (data?.items?.length ?? 0)} onChange={toggleAll} /></th>
                       <th>کد درخواست</th>
                       <th>بیمار</th>
                       <th>نوع درخواست</th>
@@ -345,7 +345,7 @@ export function ReferralsPage() {
                         <td colSpan={8} className="referrals-empty">در حال دریافت درخواست‌ها…</td>
                       </tr>
                     )}
-                    {!isLoading && Array.isArray(data?.items) && data.items.map((item) => (
+                    {!isLoading && data && Array.isArray(data.items) && data.items.map((item) => (
                       <ReferralRow
                         key={item.id}
                         item={item}

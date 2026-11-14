@@ -133,7 +133,7 @@ export function AdminSettingsPage() {
   const [error, setError] = useState('');
 
   const token = typeof window !== 'undefined' ? window.localStorage.getItem('radinet_auth_token') : null;
-  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
   const isSuperAdmin = user?.role === 'admin';
 

@@ -3,14 +3,17 @@ import {
   deleteConsultationRequest,
   updateConsultationStatus,
 } from '@/lib/about-data';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> | { id: string } },
 ) {
   try {
+    const { id } = await Promise.resolve(params);
     const body = await req.json();
-    const updated = await updateConsultationStatus(params.id, body.status);
+    const auth = getAuthorizationHeader(req, 'admin');
+    const updated = await updateConsultationStatus(id, body.status, auth);
     if (!updated) {
       return NextResponse.json({ error: 'درخواست یافت نشد' }, { status: 404 });
     }
@@ -23,10 +26,12 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> | { id: string } },
 ) {
   try {
-    const success = await deleteConsultationRequest(params.id);
+    const { id } = await Promise.resolve(params);
+    const auth = getAuthorizationHeader(req, 'admin');
+    const success = await deleteConsultationRequest(id, auth);
     if (!success) {
       return NextResponse.json({ error: 'درخواست یافت نشد' }, { status: 404 });
     }

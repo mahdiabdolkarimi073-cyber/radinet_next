@@ -351,7 +351,8 @@ export function AdminDoctorsPage() {
                       </tr>
                     )}
                     {!isLoading &&
-                      Array.isArray(data?.items) &&
+                      data &&
+                      Array.isArray(data.items) &&
                       data.items.map((doc) => (
                         <tr key={doc.id}>
                           <td data-label="نام پزشک" className="admin-page-user-cell">

@@ -4,6 +4,7 @@ import {
   adminUpdateShopProductServer,
   getShopProductBySlugServer,
 } from '@/lib/shop-storage';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -34,7 +35,8 @@ export async function PUT(
     const resolvedParams = await Promise.resolve(params);
     const id = resolvedParams.id;
     const body = await req.json();
-    const updated = await adminUpdateShopProductServer(id, body);
+    const auth = getAuthorizationHeader(req, 'admin');
+    const updated = await adminUpdateShopProductServer(id, body, auth);
     return NextResponse.json(updated);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'ویرایش محصول با خطا مواجه شد.';
@@ -50,7 +52,8 @@ export async function PATCH(
     const resolvedParams = await Promise.resolve(params);
     const id = resolvedParams.id;
     const body = await req.json();
-    const updated = await adminUpdateShopProductServer(id, body);
+    const auth = getAuthorizationHeader(req, 'admin');
+    const updated = await adminUpdateShopProductServer(id, body, auth);
     return NextResponse.json(updated);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'ویرایش محصول با خطا مواجه شد.';
@@ -59,13 +62,14 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const resolvedParams = await Promise.resolve(params);
     const id = resolvedParams.id;
-    const ok = await adminDeleteShopProductServer(id);
+    const auth = getAuthorizationHeader(req, 'admin');
+    const ok = await adminDeleteShopProductServer(id, auth);
     if (!ok) {
       return NextResponse.json({ error: 'محصول یافت نشد.' }, { status: 404 });
     }

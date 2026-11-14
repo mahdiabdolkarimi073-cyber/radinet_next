@@ -131,6 +131,20 @@ const initialForm: FormState = {
 const acceptedTypes = '.jpg,.jpeg,.png,.pdf,.dcm,.dicom';
 const maxFileSize = 25 * 1024 * 1024;
 
+function normalizeNumericDigits(raw: string): string {
+  return raw
+    .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+    .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+}
+
+function parsePatientAge(raw: string): number | null {
+  const normalized = normalizeNumericDigits(raw).trim();
+  if (!/^\d+$/.test(normalized)) return null;
+  const parsed = Number.parseInt(normalized, 10);
+  if (!Number.isSafeInteger(parsed) || parsed < 0 || parsed > 130) return null;
+  return parsed;
+}
+
 function RequiredStar() {
   return (
     <span
@@ -224,7 +238,9 @@ export function TeleReportRequestPage({ footer }: TeleReportRequestPageProps) {
       else if (form.phone.replace(/\D/g, '').length < 7) errs.phone = 'شماره تماس معتبر نیست';
       if (!form.city.trim()) errs.city = 'شهر محل سکونت را وارد کنید';
       if (!form.age.trim()) errs.age = 'سن بیمار را وارد کنید';
-      else if (Number(form.age) < 0 || Number(form.age) > 130) errs.age = 'سن معتبر نیست';
+      else if (parsePatientAge(form.age) === null) {
+        errs.age = 'سن بیمار باید یک عدد صحیح بین ۰ تا ۱۳۰ سال باشد';
+      }
       if (!form.gender) errs.gender = 'جنسیت بیمار را انتخاب کنید';
     }
     // Step 2: اطلاعات درخواست
@@ -249,6 +265,9 @@ export function TeleReportRequestPage({ footer }: TeleReportRequestPageProps) {
     if (step === 5) {
       if (!form.patientFirstName.trim() || !form.patientLastName.trim()) {
         errs.patientFirstName = 'اطلاعات بیمار ناقص است';
+      }
+      if (parsePatientAge(form.age) === null) {
+        errs.age = 'سن بیمار نامعتبر است (عدد صحیح بین ۰ تا ۱۳۰ وارد کنید)';
       }
       if (!form.imagingType || !form.imagingArea) {
         errs.imagingType = 'اطلاعات درخواست ناقص است';
@@ -407,6 +426,13 @@ export function TeleReportRequestPage({ footer }: TeleReportRequestPageProps) {
     setSubmitting(true);
     setSubmitError('');
     try {
+      const parsedAge = parsePatientAge(form.age);
+      if (parsedAge === null) {
+        setSubmitError('سن بیمار باید یک عدد صحیح بین ۰ تا ۱۳۰ سال باشد');
+        setSubmitting(false);
+        return;
+      }
+
       const token = getStoredToken();
       const formData = new FormData();
       formData.append('country', form.countryCode || form.country);
@@ -417,7 +443,7 @@ export function TeleReportRequestPage({ footer }: TeleReportRequestPageProps) {
       formData.append('passportNumber', form.passportNumber.trim());
       formData.append('phone', form.phone.trim());
       formData.append('city', form.city.trim());
-      formData.append('age', form.age.trim());
+      formData.append('age', String(parsedAge));
       formData.append('gender', form.gender);
       formData.append('clinicalHistory', form.clinicalHistory.trim());
       formData.append('symptoms', form.symptoms.trim());

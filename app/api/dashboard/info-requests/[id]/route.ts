@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { extractRequestUser } from '@/lib/server-auth';
+import { extractRequestUser, getAuthorizationHeader } from '@/lib/server-auth';
 import {
   adminUpdateCommunicationServer,
   replyToInfoRequestServer,
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> | { id: string } },
 ) {
   const user = extractRequestUser(req);
   if (!user) {
@@ -17,32 +17,45 @@ export async function PATCH(
   }
 
   try {
-    const id = decodeURIComponent(params.id || '');
+    const resolved = await Promise.resolve(context.params);
+    const id = decodeURIComponent(resolved.id || '');
+    const auth = getAuthorizationHeader(req, 'doctor');
     const body = await req.json();
 
     if (body?.response && String(body.response).trim()) {
-      const updated = replyToInfoRequestServer(id, {
-        senderRole: user.role === 'doctor' || user.role === 'specialist' ? 'doctor' : 'patient',
-        senderId: user.userId,
-        senderName: user.fullName || 'کاربر',
-        message: String(body.response).trim(),
-      });
+      const updated = await replyToInfoRequestServer(
+        id,
+        {
+          senderRole:
+            user.role === 'doctor' || user.role === 'specialist' || user.role === 'radiologist'
+              ? 'doctor'
+              : 'patient',
+          senderId: user.userId,
+          senderName: user.fullName || 'کاربر',
+          message: String(body.response).trim(),
+        },
+        auth,
+      );
       return NextResponse.json({
         ...updated,
-        title: updated.subject,
-        body: updated.message,
+        title: updated.title || updated.subject || '',
+        body: updated.body || updated.message || '',
       });
     }
 
     if (body?.status) {
-      const updated = adminUpdateCommunicationServer(id, {
-        status: body.status,
-        actorName: user.fullName || 'پزشک رادیولوژیست',
-      });
+      const updated = await adminUpdateCommunicationServer(
+        id,
+        {
+          status: body.status,
+          actorName: user.fullName || 'پزشک رادیولوژیست',
+        },
+        auth,
+      );
       return NextResponse.json({
         ...updated,
-        title: updated.subject,
-        body: updated.message,
+        title: updated.title || updated.subject || '',
+        body: updated.body || updated.message || '',
       });
     }
 

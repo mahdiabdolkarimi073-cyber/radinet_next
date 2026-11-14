@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server';
 import { updateTicketStatusServer } from '@/lib/support-storage';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
 export async function PATCH(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const updated = await updateTicketStatusServer(id, 'closed');
+    const auth = getAuthorizationHeader(request, 'support_expert');
+    const updated = await updateTicketStatusServer(id, 'closed', auth);
     if (!updated) {
       return NextResponse.json({ error: 'تیکت مورد نظر یافت نشد.' }, { status: 404 });
     }

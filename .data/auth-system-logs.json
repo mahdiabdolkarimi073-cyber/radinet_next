@@ -1,0 +1,113 @@
+[
+  {
+    "id": "5355e753-836c-446b-aab6-67043888f5e7",
+    "requestId": "req_mwg8xt3q_q9u2m78h5prc",
+    "source": "frontend-proxy",
+    "level": "INFO",
+    "operation": "REGISTER",
+    "method": "POST",
+    "routePath": "/api/auth/register",
+    "targetUrl": "http://localhost:4000/api/auth/register",
+    "statusCode": 200,
+    "durationMs": 446,
+    "backendReached": true,
+    "dtoValidationPassed": true,
+    "operationResult": "SUCCESS",
+    "connectionStatus": "CONNECTED",
+    "failureStage": "NONE",
+    "errorCategory": "NONE",
+    "errorMessage": null,
+    "maskedIdentifier": "b***r@r***t.com",
+    "responseType": "json",
+    "metadata": {
+      "responseKeys": [
+        "ok",
+        "statusCode",
+        "requestId",
+        "backendReached",
+        "token(redacted)",
+        "user"
+      ],
+      "payloadFields": [
+        "fullName",
+        "email",
+        "password"
+      ],
+      "code": null
+    },
+    "startedAt": "2026-11-14T10:11:58.266Z",
+    "completedAt": "2026-11-14T10:11:58.712Z",
+    "createdAt": "2026-11-14T10:11:58.713Z"
+  },
+  {
+    "id": "b60c5b6b-78a7-4ebb-8a22-cbab2ce06131",
+    "requestId": "req_mwg8ul4e_ftq4n3einfou",
+    "source": "frontend-proxy",
+    "level": "INFO",
+    "operation": "LOGIN",
+    "method": "POST",
+    "routePath": "/api/auth/login",
+    "targetUrl": "http://localhost:4000/api/auth/login",
+    "statusCode": 200,
+    "durationMs": 1620,
+    "backendReached": true,
+    "dtoValidationPassed": true,
+    "operationResult": "SUCCESS",
+    "connectionStatus": "CONNECTED",
+    "failureStage": "NONE",
+    "errorCategory": "NONE",
+    "errorMessage": null,
+    "maskedIdentifier": "a***n@r***t.com",
+    "responseType": "json",
+    "metadata": {
+      "responseKeys": [
+        "ok",
+        "statusCode",
+        "requestId",
+        "backendReached",
+        "token(redacted)",
+        "user"
+      ],
+      "payloadFields": [
+        "email",
+        "password"
+      ],
+      "code": null
+    },
+    "startedAt": "2026-11-14T10:09:27.860Z",
+    "completedAt": "2026-11-14T10:09:29.480Z",
+    "createdAt": "2026-11-14T10:09:29.481Z"
+  },
+  {
+    "id": "563add12-3a36-41f2-89a7-93ea527110ab",
+    "requestId": "req_mwg8qniy_qy491y2zt68w",
+    "source": "frontend-proxy",
+    "level": "ERROR",
+    "operation": "LOGIN",
+    "method": "POST",
+    "routePath": "/api/auth/login",
+    "targetUrl": "https://backend.radinet24.com/api/auth/login",
+    "statusCode": 502,
+    "durationMs": 1381,
+    "backendReached": false,
+    "dtoValidationPassed": null,
+    "operationResult": "FAILED",
+    "connectionStatus": "INVALID_RESPONSE",
+    "failureStage": "GATEWAY_BAD_UPSTREAM",
+    "errorCategory": "HTTP",
+    "errorMessage": "سرویس بک‌اند در دسترس نیست یا درگاه سرور خطای 502 برگرداند (https://backend.radinet24.com/api/auth/login).",
+    "maskedIdentifier": "a***n@r***t.com",
+    "responseType": "html",
+    "metadata": {
+      "responseKeys": [],
+      "payloadFields": [
+        "email",
+        "password"
+      ],
+      "code": "HTTP_502_NON_JSON"
+    },
+    "startedAt": "2026-11-14T10:06:24.737Z",
+    "completedAt": "2026-11-14T10:06:26.118Z",
+    "createdAt": "2026-11-14T10:06:26.171Z"
+  }
+]

@@ -3,6 +3,7 @@ import {
   createTicketServer,
   listTicketsServer,
 } from '@/lib/support-storage';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -16,7 +17,8 @@ export async function GET(request: Request) {
     const page = Number(searchParams.get('page')) || 1;
     const limit = Number(searchParams.get('limit')) || 50;
 
-    const result = await listTicketsServer({ status, priority, search, page, limit });
+    const auth = getAuthorizationHeader(request, 'support_expert');
+    const result = await listTicketsServer({ status, priority, search, page, limit }, auth);
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

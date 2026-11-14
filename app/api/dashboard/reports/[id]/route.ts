@@ -3,16 +3,19 @@ import {
   getDoctorReportByIdServer,
   updateDoctorReportDraftServer,
 } from '@/lib/tele-report-storage';
+import { getAuthorizationHeader } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(
-  _req: NextRequest,
-  context: { params: { id: string } },
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> | { id: string } },
 ) {
   try {
-    const id = decodeURIComponent(context.params.id);
-    const report = await getDoctorReportByIdServer(id);
+    const resolved = await Promise.resolve(context.params);
+    const id = decodeURIComponent(resolved.id);
+    const auth = getAuthorizationHeader(req, 'doctor');
+    const report = await getDoctorReportByIdServer(id, auth);
     if (!report) {
       return NextResponse.json({ message: 'گزارش یافت نشد.' }, { status: 404 });
     }
@@ -27,16 +30,22 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: { id: string } },
+  context: { params: Promise<{ id: string }> | { id: string } },
 ) {
   try {
-    const id = decodeURIComponent(context.params.id);
+    const resolved = await Promise.resolve(context.params);
+    const id = decodeURIComponent(resolved.id);
+    const auth = getAuthorizationHeader(req, 'doctor');
     const body = await req.json();
-    const updated = await updateDoctorReportDraftServer(id, {
-      findings: body.findings,
-      conclusion: body.conclusion,
-      signatureName: body.signatureName,
-    });
+    const updated = await updateDoctorReportDraftServer(
+      id,
+      {
+        findings: body.findings,
+        conclusion: body.conclusion,
+        signatureName: body.signatureName,
+      },
+      auth,
+    );
     return NextResponse.json(updated);
   } catch (err: any) {
     return NextResponse.json(

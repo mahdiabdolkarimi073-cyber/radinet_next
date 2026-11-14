@@ -142,7 +142,7 @@ export function PersianDatePicker({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-          <CalendarDays size={18} style={{ color: '#64748b', shrink: 0 }} />
+          <CalendarDays size={18} style={{ color: '#64748b', flexShrink: 0 }} />
           <span style={{ fontSize: '14px', color: displayText ? '#0f172a' : '#94a3b8', fontWeight: displayText ? 600 : 400 }}>
             {displayText || placeholder}
           </span>
